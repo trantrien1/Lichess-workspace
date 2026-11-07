@@ -1,0 +1,111 @@
+#acpl-chart-container {
+  cursor: pointer;
+}
+
+.analysis-chart {
+  position: relative;
+
+  canvas {
+    border-bottom-left-radius: $box-radius-size;
+    border-bottom-right-radius: $box-radius-size;
+    transition:
+      opacity 150ms,
+      background-color 150ms;
+  }
+
+  &.study__server-eval canvas {
+    border-top-left-radius: $box-radius-size;
+    border-top-right-radius: $box-radius-size;
+  }
+
+  &:has(#acpl-chart-container-loader) .analysis-chart-actions {
+    display: none;
+  }
+}
+
+.analysis-chart-actions {
+  @include box-radius;
+
+  position: absolute;
+  box-sizing: border-box;
+  pointer-events: none;
+  inset: 0;
+  padding: 4px;
+  display: flex;
+  align-items: start;
+  justify-content: end;
+  gap: 4px;
+
+  i,
+  button {
+    @include box-radius;
+
+    pointer-events: auto;
+    padding: 5px;
+    border: 1px solid hsl(from $c-font-dim h s l / 0.5);
+    background: $c-dimmer;
+    color: $c-font-dim;
+    opacity: 0.8;
+    font-size: 14px;
+
+    &::before {
+      vertical-align: top;
+    }
+  }
+
+  .delete {
+    color: $c-bad;
+  }
+
+  @include mq-has-hover {
+    :where(i, button):hover {
+      opacity: 1;
+
+      &:not(.delete) {
+        color: $c-primary;
+        border-color: hsl(from $c-primary h s l / 0.5);
+      }
+
+      &.delete {
+        border-color: hsl(from $c-bad h s l / 0.5);
+      }
+    }
+  }
+}
+
+#acpl-chart-container-loader {
+  @include padding-direction(7px, 10px, 7px, 0);
+
+  font-size: 0.9em;
+  position: absolute;
+  top: 91px;
+  background: $c-bg-box;
+  line-height: 20px;
+  box-shadow: 2px 3px 5px rgb(0 0 0 / 0.3);
+  display: flex;
+  border: $border;
+  border-radius: 0 99px 99px 0;
+
+  span {
+    @extend %nowrap-hidden;
+
+    margin-inline-start: 7px;
+    opacity: 1;
+    transition: 0.5s;
+    width: 100px;
+    display: block;
+
+    .analyse__underboard:hover & {
+      margin-inline-start: 0;
+      width: 0;
+      opacity: 0;
+    }
+  }
+
+  .spinner {
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    margin-inline-start: 10px;
+  }
+}

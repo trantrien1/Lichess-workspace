@@ -1,0 +1,27 @@
+package lila.ws
+
+import com.github.blemale.scaffeine.AsyncLoadingCache
+import reactivemongo.api.bson.*
+
+import Mongo.given
+
+final class LightUserApi(mongo: Mongo)(using Executor)(using cacheApi: util.CacheApi):
+
+  export cache.get
+
+  private val cache: AsyncLoadingCache[User.Id, User.TitleName] =
+    cacheApi(32_768, "lightUser"):
+      _.expireAfterWrite(15.minutes).maximumSize(100_000).buildAsyncFuture(fetch)
+
+  private def fetch(id: User.Id): Future[User.TitleName] =
+    mongo.user:
+      _.find(
+        BSONDocument("_id" -> id),
+        Some(BSONDocument("username" -> true, "title" -> true))
+      ).one[BSONDocument].map { docOpt =>
+        val name = for
+          doc <- docOpt
+          name <- doc.getAsOpt[User.Name]("username")
+        yield User.TitleName(name, doc.getAsOpt[User.Title]("title"))
+        name.getOrElse(id.into(User.TitleName))
+      }

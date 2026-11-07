@@ -1,0 +1,99 @@
+/* shared with analysis */
+.game__meta {
+  @extend %box-neat-force;
+
+  background: $c-bg-box;
+  padding: 1.25em 1.5em;
+
+  section:not(:last-child) {
+    border-bottom: $border;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.8rem;
+  }
+
+  &__infos {
+    @extend %flex-center-nowrap;
+
+    position: relative;
+
+    /* for bookmark */
+    &::before {
+      font-size: 3rem;
+      margin-inline-end: 0.75rem;
+    }
+
+    p {
+      margin: 0;
+    }
+
+    time {
+      opacity: 1;
+      color: $c-font-dimmer;
+    }
+
+    form.delete button {
+      color: $c-bad;
+    }
+  }
+
+  .status {
+    text-align: center;
+  }
+
+  &__players {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15em;
+    margin-top: 0.4rem;
+    font-size: 90%;
+
+    .player {
+      display: flex;
+      align-items: end;
+    }
+
+    abbr {
+      text-decoration: none;
+      color: color-mix(in oklab, $c-primary 50%, $c-font);
+    }
+  }
+
+  .bookmark {
+    @include inline-end(0);
+
+    position: absolute;
+    z-index: $z-game-bookmark-2;
+    color: $c-font-dim;
+
+    &:not(.bookmarked) .on,
+    &.bookmarked .off {
+      display: none;
+    }
+  }
+
+  .user-tv {
+    @extend %nowrap-ellipsis;
+
+    font-size: 1.2em;
+  }
+}
+
+.game__tournament {
+  .clock {
+    @extend %roboto;
+
+    font-size: 2em;
+    text-align: center;
+    margin-top: 0.2em;
+  }
+}
+
+@media (hover: hover) {
+  .game__meta .bookmark {
+    display: none;
+  }
+
+  .game__meta:hover .bookmark {
+    display: block;
+  }
+}

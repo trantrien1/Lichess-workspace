@@ -1,0 +1,622 @@
+#![forbid(unsafe_code)]
+
+use std::{
+    env,
+    fs::{self, File},
+    hash::{DefaultHasher, Hash as _, Hasher as _},
+    io::Write,
+    path::{self, Path, PathBuf},
+    process::Command,
+    sync::LazyLock,
+};
+
+use glob::glob;
+use mzstd::{Compressor, EncoderConfig, Level};
+
+static OUT_PATH: LazyLock<PathBuf> = LazyLock::new(|| PathBuf::from(&env::var("OUT_DIR").unwrap()));
+
+const EVAL_FILE_NAME: &str = "nn-1a298aa575a0.nnue";
+
+static OFFICIAL_STOCKFISH_GIT: LazyLock<Option<GitInfo>> =
+    LazyLock::new(|| GitInfo::try_read("Stockfish"));
+static FAIRY_STOCKFISH_GIT: LazyLock<Option<GitInfo>> =
+    LazyLock::new(|| GitInfo::try_read("Fairy-Stockfish"));
+
+static SF_SOURCE_FILES: LazyLock<Vec<PathBuf>> = LazyLock::new(|| {
+    assert!(
+        Path::new("Stockfish").join("src").is_dir(),
+        "Directory Stockfish/src does not exist. Try: git submodule update --init",
+    );
+    assert!(
+        Path::new("Fairy-Stockfish").join("src").is_dir(),
+        "Directory Fairy-Stockfish/src does not exist. Try: git submodule update --init",
+    );
+
+    [
+        // Stockfish
+        "Stockfish/src/Makefile",
+        "Stockfish/**/*.sh",
+        "Stockfish/src/**/*.cpp",
+        "Stockfish/src/**/*.h",
+        &format!("Stockfish/src/{}", EVAL_FILE_NAME),
+        // Fairy-Stockfish
+        "Fairy-Stockfish/src/Makefile",
+        "Fairy-Stockfish/src/**/*.cpp",
+        "Fairy-Stockfish/src/**/*.h",
+    ]
+    .iter()
+    .flat_map(|pattern| glob(pattern).unwrap())
+    .collect::<Result<Vec<PathBuf>, _>>()
+    .unwrap()
+});
+
+static SF_BUILD_PATH: LazyLock<PathBuf> = LazyLock::new(|| {
+    let mut hasher = DefaultHasher::new();
+    (*SF_SOURCE_FILES).hash(&mut hasher);
+    OUT_PATH.join(hasher.finish().to_string())
+});
+
+fn main() {
+    println!(
+        "cargo:rustc-env=FISHNET_TARGET={}",
+        env::var("TARGET").unwrap()
+    );
+
+    println!(
+        "cargo:rustc-env=OFFICIAL_STOCKFISH_VERSION={}",
+        engine_version_info(
+            "OfficialStockfish",
+            "Stockfish",
+            &engine_version_constant(
+                "Stockfish/src/misc.cpp",
+                "constexpr std::string_view version = \"",
+            ),
+            OFFICIAL_STOCKFISH_GIT.as_ref()
+        )
+    );
+    println!(
+        "cargo:rustc-env=FAIRY_STOCKFISH_VERSION={}",
+        engine_version_info(
+            "FairyStockfish",
+            "Fairy-Stockfish",
+            &engine_version_constant("Fairy-Stockfish/src/misc.cpp", "const string Version = \""),
+            FAIRY_STOCKFISH_GIT.as_ref()
+        )
+    );
+
+    // Build Stockfish and Fairy-Stockfish and archive them
+    // (along with eval files).
+    let mut compressor =
+        Compressor::new(EncoderConfig::default().with_level(Level::try_from(6).unwrap())).unwrap();
+    let mut archive = ar::Builder::new(compressor.writer(
+        File::create(OUT_PATH.join("assets.ar.zst")).unwrap(),
+        Default::default(),
+    ));
+    stockfish_build(&mut archive);
+    append_file(
+        &mut archive,
+        SF_BUILD_PATH
+            .join("Stockfish")
+            .join("src")
+            .join(EVAL_FILE_NAME),
+        0o644,
+    );
+    archive.into_inner().unwrap().finish().unwrap();
+
+    add_favicon();
+}
+
+fn engine_version_constant(path: &str, prefix: &str) -> String {
+    fs::read_to_string(path)
+        .unwrap()
+        .lines()
+        .find_map(|line| line.strip_prefix(prefix)?.split_once('"'))
+        .unwrap_or_else(|| panic!("Could not find version in {path}"))
+        .0
+        .to_owned()
+}
+
+fn engine_version_info(family: &str, name: &str, version: &str, git: Option<&GitInfo>) -> String {
+    let version = match (version, git) {
+        ("dev" | "", Some(git)) => format!("{name} dev-{}", git.date),
+        ("dev" | "", None) => format!("{name} dev"),
+        (version, _) => format!("{name} {version}"),
+    }
+    .replace('/', "_");
+    let revision = match git {
+        Some(git) => format!("{}{}", git.sha, if git.dirty { "-m" } else { "" }),
+        None => {
+            println!("cargo:warning=Could not determine git revision of {name}");
+            "nogit".to_owned()
+        }
+    }
+    .replace('/', "_");
+    format!("{family}/{version}/{revision}")
+}
+
+struct GitInfo {
+    sha: String,
+    date: String,
+    dirty: bool,
+}
+
+impl GitInfo {
+    fn try_read(dir: &str) -> Option<GitInfo> {
+        let git = |args: &[&str]| {
+            Command::new("git")
+                .arg("-C")
+                .arg(dir)
+                .args(args)
+                .output()
+                .ok()
+                .filter(|output| output.status.success())
+                .and_then(|output| String::from_utf8(output.stdout).ok())
+                .map(|stdout| stdout.trim().to_owned())
+        };
+
+        Some(GitInfo {
+            sha: git(&["rev-parse", "HEAD"])?.chars().take(8).collect(),
+            date: git(&["show", "-s", "--date=format:%Y%m%d", "--format=%cd", "HEAD"])?,
+            dirty: !git(&["status", "--porcelain", "--untracked-files=no"])?.is_empty(),
+        })
+    }
+}
+
+fn has_target_feature(feature: &str) -> bool {
+    env::var("CARGO_CFG_TARGET_FEATURE")
+        .unwrap()
+        .split(',')
+        .any(|f| f == feature)
+}
+
+macro_rules! has_x86_64_builder_feature {
+    ($feature:tt) => {{
+        cfg_select! {
+            target_arch = "x86_64" => std::arch::is_x86_feature_detected!($feature),
+            _ => false,
+        }
+    }};
+}
+
+macro_rules! has_aarch64_builder_feature {
+    ($feature:tt) => {{
+        cfg_select! {
+            target_arch = "aarch64" => std::arch::is_aarch64_feature_detected!($feature),
+            _ => false,
+        }
+    }};
+}
+
+#[allow(clippy::nonminimal_bool, clippy::eq_op)]
+fn stockfish_build<W: Write>(archive: &mut ar::Builder<W>) {
+    println!("cargo:rerun-if-env-changed=COMP");
+    println!("cargo:rerun-if-env-changed=CXX");
+    println!("cargo:rerun-if-env-changed=CXXFLAGS");
+    println!("cargo:rerun-if-env-changed=DEPENDFLAGS");
+    println!("cargo:rerun-if-env-changed=LDFLAGS");
+    println!("cargo:rerun-if-env-changed=MAKE");
+    println!("cargo:rerun-if-env-changed=SDE_PATH");
+
+    for source_file in &*SF_SOURCE_FILES {
+        fs::create_dir_all(SF_BUILD_PATH.join(source_file.parent().unwrap())).unwrap();
+        fs::copy(source_file, SF_BUILD_PATH.join(source_file)).unwrap();
+        println!("cargo:rerun-if-changed={}", source_file.display());
+    }
+
+    // Note: The target arch of the build script is the architecture of the
+    // builder and decides if pgo is possible. It is not necessarily the same
+    // as CARGO_CFG_TARGET_ARCH, the target arch of the fishnet binary.
+    //
+    // Can skip building more broadly compatible Stockfish binaries and return
+    // early when building with something like -C target-cpu=native.
+
+    match env::var("CARGO_CFG_TARGET_ARCH").unwrap().as_str() {
+        "x86_64" => {
+            let sde = env::var("SDE_PATH")
+                .ok()
+                .filter(|_| cfg!(target_arch = "x86_64"));
+
+            Target {
+                arch: "x86-64-avx512icl",
+                native: has_x86_64_builder_feature!("avx512f")
+                    && has_x86_64_builder_feature!("avx512cd")
+                    && has_x86_64_builder_feature!("avx512vl")
+                    && has_x86_64_builder_feature!("avx512dq")
+                    && has_x86_64_builder_feature!("avx512bw")
+                    && has_x86_64_builder_feature!("avx512ifma")
+                    && has_x86_64_builder_feature!("avx512vbmi")
+                    && has_x86_64_builder_feature!("avx512vbmi2")
+                    && has_x86_64_builder_feature!("avx512vpopcntdq")
+                    && has_x86_64_builder_feature!("avx512bitalg")
+                    && has_x86_64_builder_feature!("avx512vnni")
+                    && has_x86_64_builder_feature!("vpclmulqdq")
+                    && has_x86_64_builder_feature!("gfni")
+                    && has_x86_64_builder_feature!("vaes"),
+                sde: sde.clone(),
+            }
+            .build_official(archive);
+
+            let vnni512 = Target {
+                arch: "x86-64-vnni512",
+                native: has_x86_64_builder_feature!("avx512vnni")
+                    && has_x86_64_builder_feature!("avx512dq")
+                    && has_x86_64_builder_feature!("avx512f")
+                    && has_x86_64_builder_feature!("avx512bw")
+                    && has_x86_64_builder_feature!("avx512vl"),
+                sde: sde.clone(),
+            };
+            vnni512.build_multi_variant(archive);
+            if has_target_feature("avx512f")
+                && has_target_feature("avx512cd")
+                && has_target_feature("avx512vl")
+                && has_target_feature("avx512dq")
+                && has_target_feature("avx512bw")
+                && has_target_feature("avx512ifma")
+                && has_target_feature("avx512vbmi")
+                && has_target_feature("avx512vbmi2")
+                && has_target_feature("avx512vpopcntdq")
+                && has_target_feature("avx512bitalg")
+                && has_target_feature("avx512vnni")
+                && has_target_feature("vpclmulqdq")
+                && has_target_feature("gfni")
+                && has_target_feature("vaes")
+            {
+                return;
+            }
+            vnni512.build_official(archive);
+
+            if has_target_feature("avx512vnni")
+                && has_target_feature("avx512dq")
+                && has_target_feature("avx512f")
+                && has_target_feature("avx512bw")
+                && has_target_feature("avx512vl")
+            {
+                return;
+            }
+
+            Target {
+                arch: "x86-64-avx512",
+                native: has_x86_64_builder_feature!("avx512f")
+                    && has_x86_64_builder_feature!("avx512bw"),
+                sde: sde.clone(),
+            }
+            .build_both(archive);
+
+            if has_target_feature("avx512f") && has_target_feature("avx512bw") {
+                return;
+            }
+
+            Target {
+                arch: "x86-64-bmi2",
+                native: has_x86_64_builder_feature!("bmi2"),
+                sde: sde.clone(),
+            }
+            .build_both(archive);
+
+            if has_target_feature("bmi2") {
+                // Fast bmi2 can not be detected at compile time.
+            }
+
+            Target {
+                arch: "x86-64-avx2",
+                native: has_x86_64_builder_feature!("avx2"),
+                sde: sde.clone(),
+            }
+            .build_both(archive);
+
+            if has_target_feature("avx2") {
+                return;
+            }
+
+            Target {
+                arch: "x86-64-sse41-popcnt",
+                native: has_x86_64_builder_feature!("sse4.1")
+                    && has_x86_64_builder_feature!("popcnt"),
+                sde: sde.clone(),
+            }
+            .build_both(archive);
+
+            if has_target_feature("sse4.1") && has_target_feature("popcnt") {
+                return;
+            }
+
+            Target {
+                arch: "x86-64",
+                native: cfg!(target_arch = "x86_64"),
+                sde,
+            }
+            .build_both(archive);
+        }
+        "aarch64" => {
+            let native = cfg!(target_arch = "aarch64");
+
+            if env::var("CARGO_CFG_TARGET_OS").unwrap() == "macos" {
+                Target {
+                    arch: "apple-silicon",
+                    native,
+                    sde: None,
+                }
+                .build_both(archive);
+            } else {
+                Target {
+                    arch: "armv8-dotprod",
+                    native: native && has_aarch64_builder_feature!("dotprod"),
+                    sde: None,
+                }
+                .build_official(archive);
+
+                Target {
+                    arch: "armv8",
+                    native,
+                    sde: None,
+                }
+                .build_multi_variant(archive);
+
+                if has_target_feature("dotprod") {
+                    return;
+                }
+
+                Target {
+                    arch: "armv8",
+                    native,
+                    sde: None,
+                }
+                .build_official(archive);
+            }
+        }
+        target_arch => {
+            unimplemented!("Stockfish build for {} not supported", target_arch);
+        }
+    }
+}
+
+struct Target {
+    arch: &'static str,
+    native: bool,
+    sde: Option<String>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum Flavor {
+    Official,
+    MultiVariant,
+}
+
+impl Target {
+    fn build<W: Write>(
+        &self,
+        flavor: Flavor,
+        src_path: &Path,
+        name: &'static str,
+        archive: &mut ar::Builder<W>,
+    ) {
+        let release = env::var("PROFILE").unwrap() == "release";
+        let windows = env::var("CARGO_CFG_TARGET_FAMILY").unwrap() == "windows";
+        let target_os = env::var("CARGO_CFG_TARGET_OS").unwrap();
+        let sde = self.sde.as_ref().filter(|_| !self.native);
+        let pgo = release && (self.native || sde.is_some());
+
+        let exe = format!(
+            "{}-{}{}",
+            name,
+            self.arch,
+            if windows { ".exe" } else { "" }
+        );
+        if release && !pgo {
+            println!("cargo:warning=Building {exe} without profile-guided optimization");
+        }
+
+        let comp = env::var("COMP").unwrap_or_else(|_| {
+            if windows {
+                "mingw".to_owned()
+            } else if target_os == "linux" {
+                "gcc".to_owned()
+            } else {
+                "clang".to_owned()
+            }
+        });
+
+        let (default_cxx, sccache_wrapper) = match &comp[..] {
+            "mingw" => ("g++", "sccache-g++.bat"),
+            "gcc" => ("g++", "sccache-g++"),
+            _ => ("clang++", "sccache-clang++"),
+        };
+
+        let make = env::var("MAKE").unwrap_or_else(|_| {
+            if windows {
+                "mingw32-make".to_owned()
+            } else if target_os == "freebsd" {
+                "gmake".to_owned()
+            } else {
+                "make".to_owned()
+            }
+        });
+
+        assert!(
+            Command::new(&make)
+                .arg("--version")
+                .status()
+                .unwrap_or_else(|err| panic!(
+                    "{err}. Is `{make}` installed?\n\
+                    * Debian: sudo apt install build-essential\n\
+                    * Arch: sudo pacman -S base-devel\n\
+                    * MSYS2: pacman -S mingw32-make\n"
+                ))
+                .success(),
+            "$(MAKE) --version"
+        );
+
+        let cxx = env::var("CXX").unwrap_or_else(|_| {
+            if Command::new("sccache")
+                .arg("--version")
+                .status()
+                .is_ok_and(|status| status.success())
+            {
+                path::absolute("scripts")
+                    .unwrap()
+                    .join(sccache_wrapper)
+                    .to_str()
+                    .unwrap()
+                    .to_owned()
+            } else {
+                default_cxx.to_owned()
+            }
+        });
+
+        assert!(
+            Command::new(&cxx)
+                .arg("--version")
+                .status()
+                .unwrap_or_else(|err| panic!("{err}. Is `{cxx}` installed?"))
+                .success(),
+            "$(CXX) --version"
+        );
+
+        assert!(
+            Command::new(&make)
+                .current_dir(src_path)
+                .env("MAKEFLAGS", env::var("CARGO_MAKEFLAGS").unwrap())
+                .arg(format!("COMP={comp}"))
+                .arg(format!("CXX={cxx}"))
+                .arg(format!("ARCH={}", self.arch))
+                .arg("clean")
+                .status()
+                .unwrap()
+                .success(),
+            "$(MAKE) clean"
+        );
+
+        if flavor == Flavor::Official {
+            assert!(
+                Command::new(&make)
+                    .current_dir(src_path)
+                    .env("MAKEFLAGS", env::var("CARGO_MAKEFLAGS").unwrap())
+                    .arg("-B")
+                    .arg("net")
+                    .status()
+                    .unwrap()
+                    .success(),
+                "$(MAKE) net"
+            );
+        }
+
+        assert!(
+            Command::new(&make)
+                .current_dir(src_path)
+                .env("GIT_DIR", "/var/empty")
+                .env("MAKEFLAGS", env::var("CARGO_MAKEFLAGS").unwrap())
+                .env(
+                    "CXXFLAGS",
+                    format!(
+                        "{} -DNNUE_EMBEDDING_OFF",
+                        env::var("CXXFLAGS").unwrap_or_default()
+                    ),
+                )
+                .env_remove("SDE_PATH")
+                .env_remove("RUN_PREFIX")
+                .args(sde.map(|e| format!("SDE_PATH={e}")))
+                .args(sde.map(|e| format!("RUN_PREFIX={e} --")))
+                .args(
+                    match flavor {
+                        Flavor::Official => OFFICIAL_STOCKFISH_GIT.as_ref(),
+                        Flavor::MultiVariant => FAIRY_STOCKFISH_GIT.as_ref(),
+                    }
+                    .into_iter()
+                    .flat_map(|git| {
+                        [
+                            format!("GIT_SHA={}", git.sha),
+                            format!("GIT_DATE={}", git.date),
+                            format!("GIT_DIFFINDEX={}", if git.dirty { "1" } else { "" }),
+                        ]
+                    }),
+                )
+                .arg("-B")
+                .arg(format!("COMP={comp}"))
+                .arg(format!("CXX={cxx}"))
+                .arg(format!("ARCH={}", self.arch))
+                .arg(format!("EXE={exe}"))
+                .arg(if pgo { "profile-build" } else { "build" })
+                .status()
+                .unwrap()
+                .success(),
+            "$(MAKE) build"
+        );
+
+        assert!(
+            Command::new(&make)
+                .current_dir(src_path)
+                .env("MAKEFLAGS", env::var("CARGO_MAKEFLAGS").unwrap())
+                .arg(format!("COMP={comp}"))
+                .arg(format!("CXX={cxx}"))
+                .arg(format!("ARCH={}", self.arch))
+                .arg(format!("EXE={exe}"))
+                .arg("strip")
+                .status()
+                .unwrap()
+                .success(),
+            "$(MAKE) strip"
+        );
+
+        let exe_path = Path::new(src_path).join(exe);
+        append_file(archive, &exe_path, 0o755);
+        fs::remove_file(&exe_path).unwrap();
+    }
+
+    fn build_official<W: Write>(&self, archive: &mut ar::Builder<W>) {
+        self.build(
+            Flavor::Official,
+            &SF_BUILD_PATH.join("Stockfish").join("src"),
+            "stockfish",
+            archive,
+        );
+    }
+
+    fn build_multi_variant<W: Write>(&self, archive: &mut ar::Builder<W>) {
+        self.build(
+            Flavor::MultiVariant,
+            &SF_BUILD_PATH.join("Fairy-Stockfish").join("src"),
+            "fairy-stockfish",
+            archive,
+        );
+    }
+
+    fn build_both<W: Write>(&self, archive: &mut ar::Builder<W>) {
+        self.build_official(archive);
+        self.build_multi_variant(archive);
+    }
+}
+
+fn append_file<W: Write, P: AsRef<Path>>(archive: &mut ar::Builder<W>, path: P, mode: u32) {
+    let file = File::open(&path).unwrap();
+    let metadata = file.metadata().unwrap();
+    let mut header = ar::Header::new(
+        path.as_ref()
+            .file_name()
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .as_bytes()
+            .to_vec(),
+        metadata.len(),
+    );
+    header.set_mode(mode);
+    archive.append(&header, file).unwrap();
+}
+
+fn add_favicon() {
+    cfg_select! {
+        target_family = "windows" => {
+            println!("cargo:rerun-if-changed=favicon.ico");
+            winres::WindowsResource::new()
+                .set_icon("favicon.ico")
+                .compile()
+                .unwrap_or_else(|err| {
+                    // Resource compilation may fail when toolchain does not match
+                    // target, e.g. windows-msvc toolchain with windows-gnu target.
+                    // Treat as non-fatal.
+                    println!("cargo:warning=Resource compiler not invoked: {}", err);
+                });
+        }
+        _ => {}
+    }
+}

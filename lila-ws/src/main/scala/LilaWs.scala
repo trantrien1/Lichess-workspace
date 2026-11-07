@@ -1,0 +1,102 @@
+package lila.ws
+
+import com.softwaremill.macwire.*
+import com.typesafe.config.{ Config, ConfigFactory }
+import org.apache.pekko.actor.typed.{ ActorSystem, Scheduler }
+
+import java.util.concurrent.ConcurrentHashMap
+import scala.jdk.CollectionConverters.*
+
+import lila.ws.ClientActor.Req
+import lila.ws.util.RequestHeader
+
+object LilaWs extends App:
+
+  lazy val config: Config = ConfigFactory.load
+  lazy val clientSystem: ClientSystem = ActorSystem(Clients.behavior, "clients")
+  given Scheduler = clientSystem.scheduler
+  given Executor = clientSystem.executionContext
+
+  given util.CacheApi = wire[util.CacheApi]
+  lazy val mongo = wire[Mongo]
+  lazy val settings = wire[util.SettingStore]
+  lazy val groupedWithin = wire[util.GroupedWithin]
+  lazy val lightUserApi = wire[LightUserApi]
+  lazy val lilaRedis = wire[Lila]
+  lazy val inquirers = wire[Inquirers]
+  lazy val roundCrowd = wire[RoundCrowd]
+  lazy val roomCrowd = wire[RoomCrowd]
+  lazy val crowdJson = wire[ipc.CrowdJson]
+  lazy val users = wire[Users]
+  lazy val keepAlive = wire[KeepAlive]
+  lazy val lobby = wire[Lobby]
+  lazy val socialGraph = wire[SocialGraph]
+  lazy val friendList = wire[FriendList]
+  lazy val stormSign = wire[StormSign]
+  lazy val lag = wire[Lag]
+  lazy val evalCache = wire[lila.ws.evalCache.EvalCacheApi]
+  lazy val tor = wire[Tor]
+  lazy val tv = wire[Tv]
+  lazy val gameCount = wire[GameCount]
+  lazy val services = wire[Services]
+  lazy val controller = wire[Controller]
+  lazy val router = wire[Router]
+  lazy val seenAt = wire[SeenAtUpdate]
+  lazy val auth = wire[Auth]
+  lazy val nettyServer = wire[netty.NettyServer]
+  lazy val monitor = wire[Monitor]
+
+  wire[LilaHandler] // must eagerly instanciate!
+  wire[RelayCrowd] // must eagerly instanciate!
+  wire[LilaWsServer].start()
+
+final class LilaWsServer(
+    nettyServer: netty.NettyServer,
+    lila: Lila,
+    lobby: Lobby,
+    monitor: Monitor,
+    scheduler: Scheduler
+)(using Executor):
+
+  def start(): Unit =
+
+    monitor.start()
+
+    Bus.internal.subscribe(
+      "users",
+      {
+        case ipc.LilaIn.ConnectUser(_, true) => // don't send to lila
+        case msg: ipc.LilaIn.Site => lila.emit.site(msg)
+      }
+    )
+
+    scheduler.scheduleWithFixedDelay(30.seconds, 7211.millis): () =>
+      Bus.publish(_.all, ipc.ClientCtrl.Broom(nowSeconds - 30))
+
+    scheduler.scheduleWithFixedDelay(4.seconds, 1201.millis): () =>
+      val counters = lobby.pong.get()
+      lila.emit.lobby(ipc.LilaIn.Counters(counters.members, counters.rounds))
+
+    scheduler.scheduleWithFixedDelay(1.seconds, 1879.millis): () =>
+      lila.emit.site(ipc.LilaIn.Ping(UptimeMillis.make))
+      lila.emit.round(ipc.LilaIn.Ping(UptimeMillis.make))
+
+    nettyServer.start() // blocks
+
+object LilaWsServer:
+
+  private val byOrigin = ConcurrentHashMap[RequestHeader.Origin, Int](16)
+  private val byAuth = ConcurrentHashMap[RequestHeader.AuthName, Int](16)
+
+  def updateConnections(req: Req, delta: Int): Unit =
+    updateConnections(req.header.headers.origin, req.authName, delta)
+
+  def updateConnections(origin: RequestHeader.Origin, auth: RequestHeader.AuthName, delta: Int): Unit =
+    byOrigin.compute(
+      if origin.isEmpty then "none" else origin,
+      (_, prev) => Option(prev).getOrElse(0) + delta
+    )
+    byAuth.compute(auth, (_, prev) => Option(prev).getOrElse(0) + delta)
+
+  def byOriginMap: Map[RequestHeader.Origin, Int] = byOrigin.asScala.toMap
+  def byAuthMap: Map[RequestHeader.AuthName, Int] = byAuth.asScala.toMap

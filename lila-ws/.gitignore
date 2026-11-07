@@ -1,0 +1,22 @@
+logs/
+target/
+project/metals.sbt
+project/project
+project/.bloop
+.bloop
+.metals
+.vscode
+.bsp
+# docker sbt
+/?
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml

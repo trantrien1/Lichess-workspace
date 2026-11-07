@@ -1,0 +1,48 @@
+# Scala Steward: Reformat with scalafmt 3.5.8
+5f0cdbceb92fd2fdeb11b334f5427b5f439e6b36
+
+# Scala Steward: Reformat with scalafmt 3.6.1
+965e7c62800c4ce771c53ff416f925757d7c90bf
+
+# Scala Steward: Reformat with scalafmt 3.7.2
+5f11e57eebb577fe4317e7d5542b1db504ceda33
+
+# Scala Steward: Reformat with scalafmt 3.7.3
+4f924608feb3a2e4b13e30564c451bec593b1cc3
+
+# scalafmt 3.7.7 rewrite
+9a71e3fac386b7f27f5e829ab818e39c3ff07a45
+
+# Scala Steward: Reformat with scalafmt 3.7.8
+2eb2482b716f05965afd4b5ed1a4fbebdf034181
+
+# Scala Steward: Reformat with scalafmt 3.7.14
+9f8712ec23ee7538e81c9b10b507eb4ad455af60
+
+# Reformat with AvoidInfix rule
+b98d6a989a0e1e1704f690b5baff6285f764c60e
+036f81ec8ad580cd179b460744e57bfa480f2fc5
+
+# Apply scalafix rules
+bb9fb1481918969cab254a8532243fdf3436e4e8
+
+# Scala Steward: Reformat with scalafmt 3.8.5
+dcff3226d2e357b4a4da428c49b3bbeda7ef5125
+
+# Scala Steward: Reformat with scalafmt 3.8.6
+67b1e95f6d7d1ffa7ca065644321e1f8dde5031d
+
+# Scala Steward: Reformat with scalafmt 3.9.0
+85b98c502bfd2c23bb024379207598c487058651
+
+# Scala Steward: Reformat with scalafmt 3.9.7
+71835af51b3902942d9aebfae3b69810087b2872
+
+# scalafmt align.preset = none
+f1b1f39893d7033b73d592a882f5c1d524a4871b
+
+# Scala Steward: Reformat with scalafmt 3.9.9
+967070471b8ad187c6206792064179dca511b174
+
+# Scala Steward: Reformat with scalafmt 3.10.2
+900ad9d4de1b052c0cacf4fd1936d838f8305417

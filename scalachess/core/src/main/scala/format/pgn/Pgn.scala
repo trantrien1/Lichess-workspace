@@ -1,0 +1,120 @@
+package chess
+package format.pgn
+
+import monocle.syntax.all.*
+import scalalib.model.Seconds
+
+type PgnTree = Node[Move]
+
+object PgnTree:
+  extension (tree: PgnTree)
+    def render(ply: Ply): String =
+      import PgnNodeEncoder.*
+      val builder = new StringBuilder
+      tree.appendPgnStr(builder, ply)
+      builder.toString
+
+case class Pgn(tags: Tags, initial: InitialComments, tree: Option[PgnTree], startPly: Ply):
+
+  def render: PgnStr = PgnStr:
+    toString
+
+  def updatePly(ply: Ply, f: Move => Move): Option[Pgn] =
+    this.focus(_.tree.some).modifyA(_.modifyInMainlineAt((ply - startPly).value, _.updateValue(f)))
+
+  def updateLastPly(f: Move => Move): Pgn =
+    this.focus(_.tree.some).modify(_.modifyLastMainlineNode(_.updateValue(f)))
+
+  def modifyInMainline(ply: Ply, f: PgnTree => PgnTree): Option[Pgn] =
+    this.focus(_.tree.some).modifyA(_.modifyInMainlineAt((ply - startPly).value, f))
+
+  def moves: List[Move] = tree.fold(Nil)(_.mainlineValues)
+
+  def withEvent(title: String): Pgn =
+    copy(tags = tags + Tag(_.Event, title))
+
+  override def toString: String =
+    import PgnNodeEncoder.*
+    val builder = new StringBuilder
+
+    if tags.value.nonEmpty then builder.append(tags).addOne('\n').addOne('\n'): Unit
+    if initial.comments.nonEmpty then builder.append(initial.comments.mkString("{ ", " } { ", " }\n"))
+    tree.foreach(_.appendPgnStr(builder, startPly))
+    tags(_.Result).foreach(x => builder.addOne(' ').append(x))
+
+    builder.toString
+
+case class Move(
+    san: SanStr,
+    comments: List[Comment] = Nil,
+    glyphs: Glyphs = Glyphs.empty,
+    opening: Option[String] = None,
+    result: Option[String] = None,
+    timeLeft: Option[Seconds] = None, // %clk clock in seconds for the move player, after the move
+    moveTime: Option[Seconds] = None, // %emt estimated move time in seconds
+    variationComments: List[Comment] = Nil
+):
+
+  def hasComment: Boolean = comments.nonEmpty || timeLeft.isDefined || moveTime.isDefined
+
+  def render: String =
+    val builder = StringBuilder:
+      8 + (if comments.nonEmpty then 128 else 0) +
+        (if opening.isDefined then 64 else 0) +
+        (if timeLeft.isDefined then 16 else 0) +
+        (if moveTime.isDefined then 16 else 0)
+    appendSanStr(builder)
+    builder.toString
+
+  private def nonEmpty = hasComment || opening.isDefined || result.isDefined
+
+  private def appendSanStr(builder: StringBuilder): Unit =
+    builder.append(san.value)
+    glyphs.toList.foreach: glyph =>
+      if glyph.id <= 6 then builder.append(glyph.symbol)
+      else builder.append(" $").append(glyph.id)
+    if nonEmpty then
+      List(Move.clockString(timeLeft, moveTime), opening, result).flatten
+        .:::(comments.map(_.map(Move.noDoubleLineBreak)))
+        .foreach(x => builder.append(" { ").append(x).append(" }"))
+
+object Move:
+
+  given PgnNodeEncoder[Move] with
+    extension (m: Move)
+      def appendSanStr(builder: StringBuilder) = m.appendSanStr(builder)
+      def appendVariationComment(builder: StringBuilder) =
+        m.variationComments.foreach(x => builder.append(" { ").append(x.value).append(" } "))
+      def hasComment = m.hasComment
+
+  private val noDoubleLineBreakRegex = "(\r?\n){2,}".r
+
+  private def noDoubleLineBreak(txt: String) =
+    if txt.contains("\n") then noDoubleLineBreakRegex.replaceAllIn(txt, "\n")
+    else txt
+
+  def clockString(clk: Option[Seconds], emt: Option[Seconds]): Option[String] =
+    if clk.isEmpty && emt.isEmpty then None
+    else
+      val builder = new StringBuilder(if emt.isDefined then 32 else 16)
+      clk.foreach: seconds =>
+        builder.append("[%clk ")
+        Move.formatPgnSeconds(seconds, builder)
+        builder.append("]")
+      emt.foreach: seconds =>
+        if clk.isDefined then builder.append(' ')
+        builder.append("[%emt ")
+        Move.formatPgnSeconds(seconds, builder)
+        builder.append("]")
+      Some(builder.toString)
+
+  // optimized for speed to match:
+  // f"${d.toHours}:${d.toMinutesPart}%02d:${d.toSecondsPart}%02d"
+  def formatPgnSeconds(t: Seconds, builder: StringBuilder): Unit =
+    val d = java.time.Duration.ofSeconds(t.value)
+    builder.append(d.toHours).append(':')
+    val (minutes, seconds) = (d.toMinutesPart, d.toSecondsPart)
+    if minutes < 10 then builder.append('0')
+    builder.append(minutes).append(':')
+    if seconds < 10 then builder.append('0')
+    builder.append(seconds)

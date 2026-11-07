@@ -1,0 +1,76 @@
+name: Continuous Integration
+
+on:
+  pull_request:
+    branches: ['**']
+  push:
+    branches: ['**']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_OPTS: "-Xmx6G -XX:+UseG1GC"
+      SBT_OPTS: "-Dsbt.ci=true"
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v7
+
+      - name: Setup JVM
+        uses: actions/setup-java@v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+        
+      - name: Test
+        run: sbt testKit/test
+
+  compile:
+    runs-on: ubuntu-latest
+    env:
+      JAVA_OPTS: "-Xmx6G -XX:+UseG1GC"
+      SBT_OPTS: "-Dsbt.ci=true"
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v7
+
+      - name: Setup JVM
+        uses: actions/setup-java@v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+        
+      - name: compile
+        run: sbt compile
+
+  format:
+    runs-on: ubuntu-latest
+    env:
+      SBT_OPTS: "-Dsbt.ci=true"
+    steps:
+
+      - name: Checkout current branch
+        uses: actions/checkout@v7
+
+      - name: Setup JVM
+        uses: actions/setup-java@v6.1.0
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - name: Setup sbt
+        uses: sbt/setup-sbt@v1
+        
+      - name: Check Formatting
+        run: sbt check

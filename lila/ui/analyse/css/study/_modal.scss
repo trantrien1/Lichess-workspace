@@ -1,0 +1,123 @@
+.study-modal {
+  min-width: 80vw;
+
+  @media (min-width: at-least($x-small)) {
+    min-width: 500px;
+  }
+
+  .form3 {
+    text-align: left;
+
+    .editor {
+      margin: -30px 0 30px;
+
+      .spinner {
+        padding-top: 80px;
+      }
+    }
+  }
+
+  .tabs-horiz {
+    backdrop-filter: none;
+  }
+
+  h2 {
+    margin-bottom: 0.5em;
+
+    icon {
+      font-size: 0.6em;
+
+      &,
+      &::before {
+        vertical-align: top;
+      }
+
+      margin-inline-start: 1rem;
+      opacity: 0.5;
+      cursor: pointer;
+
+      &:hover {
+        opacity: 0.7;
+        color: $c-primary;
+      }
+    }
+  }
+
+  .destructive {
+    text-align: left;
+    font-size: 0.9em;
+
+    form {
+      display: inline-block;
+    }
+
+    button {
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .form-actions-secondary {
+    margin-bottom: -1rem;
+
+    a {
+      padding: 0.8em 1em;
+      display: inline-block;
+    }
+  }
+
+  &.chapter-new {
+    .tabs-horiz {
+      margin: 0 0 1.6em 0;
+      border-bottom: $border;
+    }
+
+    .form-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .import-from__chapter {
+      @extend %break-word-hard, %ellipsis;
+
+      max-width: 100%;
+      margin-block: 0.25rem 0.75rem;
+    }
+
+    .preview-in-editor {
+      float: right;
+      margin-top: 0.2em;
+    }
+
+    .chess960-position__inputs {
+      @extend %flex-center-nowrap;
+
+      gap: 1em;
+    }
+  }
+
+  &.study-edit {
+    @media (min-width: at-least($x-small)) {
+      min-width: 600px;
+    }
+
+    .flair-and-name {
+      gap: 4%;
+
+      .form-group:last-child {
+        flex: 1 1 auto;
+      }
+
+      .uflair {
+        margin: 0;
+        font-size: 1.3em;
+      }
+    }
+  }
+
+  cg-resize {
+    display: none;
+  }
+}

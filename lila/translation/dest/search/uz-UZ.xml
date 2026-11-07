@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="search">Qidiriş</string>
+  <string name="advancedSearch">Kengaytirilgan qidiruv</string>
+  <plurals name="searchInXGames">
+    <item quantity="one">%s ta şaxmat öyinidan qidiriş</item>
+    <item quantity="other">%s ta şaxmat öyinidan qidiriş</item>
+  </plurals>
+  <plurals name="xGamesFound">
+    <item quantity="one">Bitta oʻyin topildi</item>
+    <item quantity="other">%s ta öyin topildi</item>
+  </plurals>
+  <string name="opponentName">Raqib ismi</string>
+  <string name="loser">Mağlub</string>
+  <string name="from">Şundan</string>
+  <string name="to">Şungaça</string>
+  <string name="humanOrComputer">Öyinçining raqibi odam yoki kompyutermidi</string>
+  <string name="aiLevel">S.I. darajasi</string>
+  <string name="source">Manba</string>
+  <string name="nbTurns">Yurişlar soni</string>
+  <string name="result">Natija</string>
+  <string name="winnerColor">Ğolib rangi</string>
+  <string name="date">Sana</string>
+  <string name="sortBy">Saralaş</string>
+  <string name="analysis">Tahlil</string>
+  <string name="onlyAnalysed">Faqat kompyuter tahlili mavjud bölgan öyinlar</string>
+  <string name="color">Rang</string>
+  <string name="evaluation">Baholaş</string>
+  <string name="maxNumber">Maksimal son</string>
+  <string name="maxNumberExplanation">Körsatiladigan öyinlarning maksimal soni</string>
+  <string name="include">Öz içiga oladi</string>
+  <string name="descending">Kamayiş tartibida</string>
+  <string name="ascending">Ösiş tartibida</string>
+  <plurals name="gamesFound">
+    <item quantity="one">%s ta öyin topildi</item>
+    <item quantity="other">%s ta öyin topildi</item>
+  </plurals>
+  <string name="ratingExplanation">Ikkala öyinçining örtaça reytingi</string>
+</resources>

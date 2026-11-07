@@ -1,0 +1,13 @@
+Stockfish, Fairy-Stockfish and the fishnet client are free software;
+you can redistribute them and/or modify them under the terms of the GNU General
+Public License, version 3, as published by the Free Software Foundation.
+
+You can find the source code at:
+
+* https://github.com/official-stockfish/Stockfish
+* https://github.com/ianfab/Fairy-Stockfish
+* https://github.com/lichess-org/fishnet
+
+These programs are distributed in the hope that they will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+or FITNESS FOR A PARTICULAR PURPOSE. See LICENSE.txt for more details.

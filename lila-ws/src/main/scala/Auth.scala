@@ -1,0 +1,131 @@
+package lila.ws
+
+import com.roundeights.hasher.Algo
+import com.typesafe.config.Config
+import reactivemongo.api.bson.*
+
+import scala.jdk.CollectionConverters.given
+
+import util.RequestHeader
+
+final class Auth(mongo: Mongo, seenAt: SeenAtUpdate, config: Config)(using Executor):
+
+  import Auth.*
+  import Mongo.given
+
+  def apply(req: RequestHeader): Future[Option[Success]] =
+    if req.flag.exists(flag => flag == Flag.api || flag == Flag.embed)
+    then Future.successful(None)
+    else
+      sessionIdFromReq(req)
+        .match
+          case Some(sid) =>
+            if sid.startsWith(appealPrefix) || sid.startsWith(oauthPrefix)
+            then Future.successful(None)
+            else sessionAuth(sid)
+          case None =>
+            bearerFromHeader(req).orElse(bearerFromQuery(req)) match
+              case Some(bearer) => bearerAuth(bearer)
+              case None => Future.successful(None)
+        .flatMap:
+          _.fold(Future.successful(None)): success =>
+            mongo.isUserEnabled(success.user).map(_.option(success))
+
+  def sidFromReq(req: RequestHeader): Option[String] =
+    req
+      .cookie(cookieName)
+      .flatMap:
+        case sidRegex(id) => Some(id)
+        case _ => None
+
+  private def sriFromReq(req: RequestHeader): Option[Sri] =
+    Sri.from(req.uncheckedSri)
+
+  def anonSecretFromReq(req: RequestHeader): Option[String] =
+    sidFromReq(req) orElse sriFromReq(req).map(_.value)
+
+  private def sessionAuth(sid: String): Future[Option[Success.Cookie]] =
+    mongo
+      .security:
+        _.find(BSONDocument("_id" -> sid, "up" -> true), sessionAuthDbProj).one[BSONDocument]
+      .map:
+        _.flatMap { _.getAsOpt[User.Id]("user") }
+      .map:
+        _.map: user =>
+          Success.Cookie:
+            Impersonations
+              .get(user.into(User.ModId))
+              .getOrElse:
+                seenAt.set(user, None)
+                user
+
+  private val sessionAuthDbProj = Some(BSONDocument("_id" -> false, "user" -> true))
+  private val tokenAuthDbProj = Some(BSONDocument("_id" -> false, "userId" -> true, "scopes" -> true))
+
+  private val cookieName = config.getString("cookie.name")
+
+  private val bearerSigners = config.getStringList("oauth.secrets").asScala.toList.map(Algo.hmac)
+
+  private def bearerFromHeader(req: RequestHeader): Option[Auth.Bearer] =
+    req.headers.authorization.flatMap: authorization =>
+      val prefix = "Bearer "
+      if authorization.startsWith(prefix) then
+        authorization.stripPrefix(prefix).split(':') match
+          case Array(bearer, signed) if bearerSigners.exists(_.sha1(bearer).hash_=(signed)) =>
+            Some(Bearer(bearer))
+          case _ => None
+      else None
+
+  private def bearerFromQuery(req: RequestHeader): Option[Auth.Bearer] = for
+    bearer <- Bearer.from(req.queryParameter("oauth_token"))
+    if req.isTakex3Web
+  yield bearer
+
+  private def bearerAuth(bearer: Bearer): Future[Option[Success]] =
+    val tokenId = AccessTokenId.from(bearer)
+    mongo.oauthColl
+      .flatMap:
+        _.find(
+          BSONDocument(
+            "_id" -> tokenId,
+            "scopes" -> BSONDocument("$in" -> List(mobileScope, takex3Scope))
+          ),
+          tokenAuthDbProj
+        ).one[BSONDocument]
+      .map: res =>
+        for
+          doc <- res
+          id <- doc.getAsOpt[User.Id]("userId")
+          scopes <- doc.getAsOpt[List[String]]("scopes")
+        yield
+          seenAt.set(id, Some(tokenId))
+          Success.OAuth(id, scopes.mkString(","))
+
+  private def sessionIdFromReq(req: RequestHeader): Option[String] =
+    req
+      .cookie(cookieName)
+      .collect:
+        case sessionIdRegex(id) => id
+      .orElse(req.queryParameter(sessionIdKey))
+
+object Auth:
+  private val sessionIdKey = "sessionId"
+  private val sessionIdRegex = s"""$sessionIdKey=(\\w+)""".r.unanchored
+  private val sidKey = "sid"
+  private val sidRegex = s"""$sidKey=(\\w+)""".r.unanchored
+  private val appealPrefix = "appeal:"
+  private val oauthPrefix = "TOK-"
+
+  val mobileScope = "web:mobile"
+  val takex3Scope = "web:polygon"
+
+  enum Success(val user: User.Id):
+    case Cookie(u: User.Id) extends Success(u)
+    case OAuth(u: User.Id, scopes: String) extends Success(u)
+
+  opaque type Bearer = String
+  object Bearer extends OpaqueString[Bearer]
+
+  opaque type AccessTokenId = String
+  object AccessTokenId extends OpaqueString[AccessTokenId]:
+    def from(bearer: Bearer) = AccessTokenId(Algo.sha256(bearer.value).hex)

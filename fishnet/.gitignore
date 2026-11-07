@@ -1,0 +1,16 @@
+/target
+fishnet.ini
+
+/intel-sde
+/sde-external-9.0.0-2021-11-07-*
+
+# Devenv
+.devenv*
+devenv.local.nix
+devenv.local.yaml
+
+# direnv
+.direnv
+
+# pre-commit
+.pre-commit-config.yaml

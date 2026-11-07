@@ -1,0 +1,9 @@
+kind: Project
+apiVersion: project.openshift.io/v1
+metadata:
+  name: fishnet
+  labels:
+    kubernetes.io/metadata.name: fishnet
+  annotations:
+    openshift.io/description: 'FishNet Worker'
+    openshift.io/display-name: 'FishNet Worker'

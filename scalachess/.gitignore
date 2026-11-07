@@ -1,0 +1,26 @@
+project/.bloop/
+project/metals.sbt
+project/project
+project/target
+target
+
+# auto-generated eclipse files.
+/.classpath
+/.project
+/.settings/
+
+.idea
+.bsp
+.bloop/
+.metals/
+# docker sbt
+/?
+
+# VS Code
+*.code-workspace
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets

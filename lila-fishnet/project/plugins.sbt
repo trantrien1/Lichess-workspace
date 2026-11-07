@@ -1,0 +1,18 @@
+excludeDependencies ++= Seq(
+  ExclusionRule("org.scala-lang.modules", "scala-collection-compat_2.13"),
+  ExclusionRule("org.scala-lang.modules", "scala-xml_2.13")
+)
+
+addSbtPlugin("ch.epfl.scala" % "sbt-scalafix" % "0.14.9")
+
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.13.2")
+
+addSbtPlugin("com.github.sbt" % "sbt-git" % "2.2.0")
+
+addSbtPlugin("com.github.sbt" % "sbt-native-packager" % "1.13.0")
+
+addSbtPlugin("com.github.sbt" % "sbt-release" % "1.5.0")
+
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
+
+addSbtPlugin("org.typelevel" % "sbt-tpolecat" % "0.5.7")

@@ -1,0 +1,180 @@
+package lila.common
+
+import play.api.http.HeaderNames
+import play.api.libs.typedmap.TypedKey
+import play.api.mvc.RequestHeader
+import play.api.routing.Router
+import scalalib.net.{ Bearer, UserAgent }
+
+import scala.util.matching.Regex
+
+import lila.common.Form.trueish
+import lila.core.data.UntypedFormRequest
+import lila.core.net.*
+
+object HTTPRequest:
+
+  def isXhr(req: RequestHeader): Boolean =
+    req.headers.get("X-Requested-With").contains("XMLHttpRequest")
+
+  def isSynchronousHttp(req: RequestHeader) = !isXhr(req)
+
+  def isSafe(req: RequestHeader) = req.method == "GET" || req.method == "HEAD" || req.method == "OPTIONS"
+  def isUnsafe(req: RequestHeader) = !isSafe(req)
+
+  def isRedirectable(using req: RequestHeader) =
+    isSynchronousHttp(req) && isSafe(req) && !isLichessMobile
+
+  def isXhrFromEmbed(req: RequestHeader) =
+    isXhr(req) && referer(req).exists(_.contains(s"${req.host}/embed/"))
+
+  private val appOrigins: List[Origin] = Origin.from:
+    List(
+      "capacitor://localhost", // ios
+      "ionic://localhost", // ios
+      "http://localhost" // android/dev/flutter
+    )
+
+  def appOrigin(req: RequestHeader): Option[Origin] =
+    origin(req).filter: reqOrigin =>
+      appOrigins.exists: appOrigin =>
+        reqOrigin == appOrigin || reqOrigin.value.startsWith(s"$appOrigin:")
+
+  def isApi(req: RequestHeader) = req.path.startsWith("/api/")
+  def isApiOrApp(req: RequestHeader) = isApi(req) || appOrigin(req).isDefined
+
+  def isAssets(req: RequestHeader) = req.path.startsWith("/assets/")
+
+  def userAgent(req: RequestHeader): UserAgent =
+    req.headers.get(HeaderNames.USER_AGENT).fold(UserAgent.zero)(UserAgent(_))
+
+  val isChrome96Plus = UaMatcher("""Chrome/(?:\d{3,}|9[6-9])""")
+  val isChrome113Plus = UaMatcher("""Chrome/(?:11[3-9]|1[2-9]\d)""")
+  val isFirefox119Plus = UaMatcher("""Firefox/(?:119|1[2-9]\d)""")
+  val isMobileBrowser = UaMatcher("""(?i)iphone|ipad|ipod|android.+mobile""")
+  def isLichessMobile(ua: UserAgent): Boolean = ua.value.startsWith("Lichess Mobile/")
+  def isLichessMobile(using req: RequestHeader): Boolean = isLichessMobile(userAgent(req))
+  def isLichobile(ua: UserAgent): Boolean = ua.value.contains("Lichobile/")
+  def isLichobile(using req: RequestHeader): Boolean = isLichobile(userAgent(req))
+  def isAndroid = UaMatcher("Android")
+  def lichessMobileVersion(ua: UserAgent): Option[LichessMobileVersion] =
+    isLichessMobile(ua).so:
+      for
+        uaRest <- ua.value.split("/", 2).lift(1)
+        versionStr = uaRest.takeWhile(' ' != _)
+        version <- versionStr.split('.') match
+          case Array(major, minor, _) =>
+            (major.toIntOption, minor.toIntOption).mapN(LichessMobileVersion(_, _))
+          case _ => none
+      yield version
+
+  def origin(req: RequestHeader): Option[Origin] = Origin.from(req.headers.get(HeaderNames.ORIGIN))
+  def referer(req: RequestHeader): Option[String] = req.headers.get(HeaderNames.REFERER)
+  def noReferer(req: RequestHeader): Boolean = referer(req).isEmpty
+
+  def ipAddress(req: RequestHeader): IpAddress =
+    IpAddress.unchecked(ipAddressStr(req))
+
+  def ipAddressStr(req: RequestHeader): String =
+    // chain of trusted proxies, strip scope id
+    req.remoteAddress.split(", ").last.split("%").head
+
+  def UaMatcher(rStr: String): RequestHeader => Boolean =
+    val pattern = rStr.r.pattern
+    (req: RequestHeader) => pattern.matcher(userAgent(req).value).find
+
+  def uaMatches(req: RequestHeader, regex: Regex): Boolean = regex.find(userAgent(req).value)
+
+  private val fileExtensionRegex = """\.(?<!^\.)[a-zA-Z0-9]{2,4}$""".r
+
+  def hasFileExtension(req: RequestHeader) = fileExtensionRegex.find(req.path)
+
+  def print(req: RequestHeader) = s"${printReq(req)} ${printClient(req)}"
+
+  def printReq(req: RequestHeader) = s"${req.method} ${req.domain}${req.uri}"
+
+  def printClient(req: RequestHeader) =
+    s"${ipAddressStr(req)} origin:${origin(req).so(_.value)} referer:${~referer(req)} ua:${userAgent(req)}"
+
+  def bearer(using req: RequestHeader): Option[(Bearer, Option[String])] = for
+    authorization <- req.headers.get(HeaderNames.AUTHORIZATION)
+    prefix = "Bearer "
+    if authorization.startsWith(prefix)
+    raw = authorization.stripPrefix(prefix)
+  yield raw.split(':') match
+    case Array(bearer, sign) => Bearer(bearer) -> sign.some
+    case _ => (Bearer(raw), none)
+
+  def accepts(req: RequestHeader): Option[String] = req.headers.get(HeaderNames.ACCEPT)
+  def acceptsNdJson(req: RequestHeader) = accepts(req) contains "application/x-ndjson"
+  def acceptsJson(req: RequestHeader) = accepts(req).exists: a =>
+    a == "application/web.lichess+json" ||
+      a.startsWith("application/json") ||
+      a.startsWith("application/vnd.lichess.v")
+  def acceptsCsv(req: RequestHeader) = accepts(req) contains "text/csv"
+  def acceptsMarkdown(using req: RequestHeader) =
+    accepts(req).contains("text/markdown") ||
+      queryStringGet("output_format").exists(f => f == "md" || f == "markdown")
+  def isEventSource(req: RequestHeader): Boolean = accepts(req) contains "text/event-stream"
+
+  def actionName(req: RequestHeader): String =
+    req.attrs.get(Router.Attrs.ActionName).getOrElse("NoHandler")
+
+  private val LichobileVersionHeaderPattern = """application/vnd\.lichess\.v(\d++)\+json""".r
+
+  def apiVersion(req: RequestHeader): Option[ApiVersion] =
+    accepts(req).flatMap:
+      case LichobileVersionHeaderPattern(v) => ApiVersion.from(v.toIntOption)
+      case _ => none
+
+  def queryStringGet(name: String)(using req: RequestHeader): Option[String] =
+    req.queryString.get(name).flatMap(_.headOption).filter(_.nonEmpty)
+
+  def queryStringBool(name: String)(using req: RequestHeader): Boolean =
+    queryStringGet(name).exists(trueish)
+
+  def queryStringBoolOpt(name: String)(using req: RequestHeader): Option[Boolean] =
+    queryStringGet(name).map(trueish)
+
+  def queryStringGetAs[A](name: String)(using req: RequestHeader, sr: SameRuntime[String, A]): Option[A] =
+    queryStringGet(name).map(sr.apply)
+
+  def fromFormOrQuery(name: String)(using req: UntypedFormRequest): Option[String] =
+    req.body.get(name).flatMap(_.headOption).filter(_.nonEmpty).orElse(queryStringGet(name))
+
+  def looksLikeLichessBot(req: RequestHeader) =
+    val ua = userAgent(req).value
+    ua.startsWith("lichess-bot/") || ua.startsWith("maia-bot/")
+
+  // this header is set by our nginx config, based on the nginx whitelist file.
+  def ipTier(req: RequestHeader) = IpTier:
+    req.headers.get("X-Ip-Tier").exists(_ != "1")
+
+  def isKid(req: RequestHeader) =
+    req.headers.get("X-Lichess-KidMode").exists(trueish)
+
+  def asn(req: RequestHeader): Option[ASN] =
+    ASN.from(req.headers.get("X-ASN").flatMap(_.toIntOption))
+
+  def continent(req: RequestHeader): Option[Continent] =
+    req.headers.get("X-Continent").flatMap(Continent.byCode.get)
+
+  def country(using req: RequestHeader): Option[CountryCode] =
+    CountryCode.from(req.headers.get("X-Country"))
+
+enum ClientName:
+  case lichobile, xhr, mobile, crawler, browser, fishnet, unknown
+  def name = toString
+  def isCrawler = this == crawler
+  def isFishnet = this == fishnet
+  def isHuman = !isCrawler && !isFishnet
+  def isMobile = this == mobile
+  def isLichobile = this == lichobile
+  def isXhr = this == xhr
+
+object ClientName:
+
+  val reqAttr: TypedKey[ClientName] = TypedKey("ClientName")
+
+  def apply(req: RequestHeader): ClientName =
+    req.attrs.get(reqAttr).getOrElse(unknown)

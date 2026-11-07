@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="lichessStreamers">Lichess strimerlari</string>
+  <string name="lichessStreamer">Lichess strimeri</string>
+  <string name="live">EFIRDA!</string>
+  <string name="offline">OFLAYN</string>
+  <string name="currentlyStreaming">Jonli efirda: %s</string>
+  <string name="lastStream">Oxirgi efir: %s</string>
+  <string name="becomeStreamer">Lichess strimeriga aylaning</string>
+  <string name="doYouHaveStream">Twitç yoki YouTube kanalingiz bormi?</string>
+  <string name="hereWeGo">Ketdik!</string>
+  <string name="allStreamers">Barça strimerlar</string>
+  <string name="editPage">Strimer sahifasini tahrirlaş</string>
+  <string name="yourPage">Sizning strimer sahifangiz</string>
+  <string name="downloadKit">Strimer töplamini yuklab oliş</string>
+  <string name="xIsStreaming">%s efirda</string>
+  <string name="rules">Strim qiliş qoidalari</string>
+  <string name="rule1">Lichessʼda strim qilayotganingizda, efir sarlavhasiga \"lichess.org\" kalit sözini kiriting va \"Chess\" (Şaxmat) turkumidan foydalaning.</string>
+  <string name="rule2">Lichessʼga aloqador bölmagan kontentni efirga uzatganingizda, uşbu kalit sözni sarlavhadan olib taşlang.</string>
+  <string name="rule3">Lichess efiringizni avtomatik ravişda aniqlaydi va quyidagi imkoniyatlarni faollaştiradi:</string>
+  <string name="rule4" comment="the resulting message is: Read our streaming Fairplay FAQ to ensure a fair play for everyone in your stream">Efir davomida barça uçun halol öyin muhitini taʼminlaş maqsadida %s bölimi bilan tanişib çiqing.</string>
+  <string name="streamingFairplayFAQ">halol öyin böyiça tez‑tez beriladigan savollar</string>
+  <string name="perks">Kalit sözi bilan strim qilişning afzalliklari</string>
+  <string name="perk1">Lichess profilingizda yonayotgan strimer belgisiga paydo böladi.</string>
+  <string name="perk2">Strimerlar röyxatining eng yuqori qismiga kötarilasiz.</string>
+  <string name="perk3">Lichessʼdagi obunaçilaringizga bildirişnoma yuboriladi.</string>
+  <string name="perk4">Striming qilayotganingiz haqida öyinlaringizda, turnirlarda va saboqlarda körsatiladi.</string>
+  <string name="approved">Strimingiz tasdiqlandi.</string>
+  <string name="pendingReview">Strimingiz moderatorlar tomonidan körib çiqilmoqda.</string>
+  <string name="pleaseFillIn">Iltimos, strimer haqidagi maʼlumotlaringizni töldiring va rasm yuklang.</string>
+  <string name="whenReadyToBeListedAsStreamer" comment="whenReady&#10;&#10;%s is &quot;request a moderator review&quot;">Lichess strimerlari röyxatiga kirişga tayyor bölsangiz, %s.</string>
+  <string name="submitForReview">Körib çiqiş uçun yuboriş</string>
+  <string name="streamerLanguageSettings">Lichess strimerlar sahifasi auditoriyangizni efir platformangizda körsatilgan tilga qarab aniqlaydi. Şaxmat efirlaringiz uçun foydalanayotgan ilova yoki efir xizmatingiz sozlamalarida asosiy tilni töğri belgilang.</string>
+  <string name="pleaseAllow">Strimer belgisi va röyxatga olinişingiz tasdiqlanişi uçun 72 soatgaça vaqt ketişi mumkin.</string>
+  <string name="chooseYoutubeChannel">Lichessʼda foydalanmoqçi bölgan YouTube kanalingizni tanlang.</string>
+  <string name="connect">Ulaş</string>
+  <string name="disconnect">Uziş</string>
+  <string name="streamerName">Lichessʼdagi strimer ismingiz</string>
+  <plurals name="keepItShort">
+    <item quantity="one">Qisqaroq yozing: köpi bilan %s ta belgi</item>
+    <item quantity="other">Qisqaroq yozing: köpi bilan %s ta belgi</item>
+  </plurals>
+  <string name="visibility">Strimerlar sahifasida körinsin</string>
+  <string name="whenApproved">Moderatorlar tomonidan tasdiqlanganidan söng</string>
+  <string name="headline">Sarlavha</string>
+  <string name="tellUsAboutTheStream">Strimingiz haqida bir jumla bilan sözlab bering</string>
+  <string name="longDescription">Batafsil tavsif</string>
+  <string name="xStreamerPicture">%s strimer rasmi</string>
+  <string name="changePicture">Rasmni özgartiriş/öçiriş</string>
+  <string name="uploadPicture">Rasm yuklaş</string>
+  <string name="maxSize">Maksimal hajmi: %s</string>
+</resources>

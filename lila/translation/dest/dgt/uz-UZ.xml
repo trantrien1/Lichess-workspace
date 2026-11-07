@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="dgtBoard">DGT taxtasi</string>
+  <string name="lichessAndDgt">Lichess va DGT</string>
+  <string name="dgtBoardRequirements">DGT taxtasi uçun talablar</string>
+  <string name="dgtBoardLimitations">DGT taxtasining çeklovlari</string>
+  <string name="thisPageAllowsConnectingDgtBoard">Uşbu sahifa orqali DGT taxtangizni Lichessʼga ulaşingiz va undan öyinlarda foydalanişingiz mumkin.</string>
+  <string name="toConnectTheDgtBoard">DGT elektron taxtasini ulaş uçun %s dasturini örnatişingiz kerak böladi.</string>
+  <string name="downloadHere">Dasturni bu yerdan yuklab olişingiz mumkin: %s.</string>
+  <string name="ifLiveChessRunningOnThisComputer">Agar uşbu kompyuterda %1$s işlayotgan bölsa, ulanişni %2$s orqali tekşirişingiz mumkin.</string>
+  <string name="openingThisLink">uşbu havolani oçiş</string>
+  <string name="ifLiveChessRunningElsewhere">Agar %1$s boşqa qurilmada yoki boşqa portda işlayotgan bölsa, IP‑manzil va portni %2$s sozlaşingiz kerak böladi.</string>
+  <string name="configurationSection">sozlaş bölimida</string>
+  <string name="keepPlayPageOpen">Öyin sahifasi brauzeringizda oçiq turişi kerak. Sahifa körinib turişi şart emas — uni pastga tuşirib (minimize) qöyişingiz mumkin yoki Lichess öyin sahifasi bilan yonma-yon joylaştirişingiz mumkin, biroq uni yopmang, aks holda taxta işlamay qoladi.</string>
+  <string name="boardWillAutoConnect">Taxta hozir davom etayotgan yoki yangi boşlanadigan har qanday öyinga avtomatik ravişda ulanadi. Qaysi öyinni öynaşni tanlaş imkoniyati tez kunda qöşiladi.</string>
+  <string name="timeControlsForCasualGames">Reytingsiz öyinlar uçun vaqt nazorati: faqat klassik, yozişmali va Rapid.</string>
+  <string name="timeControlsForRatedGames">Reytingli öyinlar uçun vaqt nazorati: klassik, yozişmali va baʼzi Rapid turlari (jumladan, 15+10 va 20+0)</string>
+  <string name="whenReadySetupBoard">Tayyor bölganingizda, taxtani sozlang va söngra %s tugmasini bosing.</string>
+  <string name="ifMoveNotDetected">Agar yuriş aniqlanmasa</string>
+  <string name="checkYouHaveMadeOpponentsMove">Dastlab raqibingizning yurişini DGT taxtasida ham amalga oşirganingizni tekşiring. Yurişingizni ortga qaytaring. Uni qaytadan amalga oşiring.</string>
+  <string name="asALastResort">Oxirgi çora sifatida, taxtadagi donalarni Lichessʼdagi bilan bir xil qilib tering, söng %s</string>
+  <string name="reloadThisPage">uşbu sahifani yangilang</string>
+  <string name="configureYourDgtBoard">DGT taxtani sozlaş</string>
+  <string name="lichessConnectivity">Lichess bilan ulaniş</string>
+  <string name="validDgtOauthToken">Sizda DGT orqali öynaş uçun mos keladigan OAuth tokeni mavjud.</string>
+  <string name="dgtPlayMenuEntryAdded">Yuqoridagi \"ÖYNAŞ\" menyusiga %s yozuvi qöşildi.</string>
+  <string name="noSuitableOauthToken">Heç qanday mos keladigan OAuth tokeni yaratilmagan.</string>
+  <string name="dgtBoardConnectivity">DGT taxtasi ulanişi</string>
+  <string name="clickToGenerateOne">Yaratiş uçun bosing</string>
+  <string name="webSocketUrl">%s WebSocket URLʼi</string>
+  <string name="useWebSocketUrl">Agar %2$s boşqa qurilmada yoki boşqa portda işlatilmayotgan bölsa, \"%1$s\" manzilidan foydalaning.</string>
+  <string name="textToSpeech">Nutq sintezatori</string>
+  <string name="configureVoiceNarration">Közingizni şaxmat taxtasidan uzmasligingiz uçun amalga oşirilgan yurişlarni ovozli aytib berişni sozlang.</string>
+  <string name="enableSpeechSynthesis">Nutq sintezini yoqiş</string>
+  <string name="speechSynthesisVoice">Nutq sintezi ovozi</string>
+  <string name="announceAllMoves">Barça yurişlarni eʼlon qiliş</string>
+  <string name="selectAnnouncePreference">Sizning ham, raqibingizning ham yurişlarini eşitiş uçun HA variantini tanlang. Faqat raqibingizning yurişlarini eşitiş uçun esa YÖQ variantini tanlang.</string>
+  <string name="announceMoveFormat">Yurişlarni eʼlon qiliş formati</string>
+  <string name="moveFormatDescription">SAN — bu Lichessʼdagi standart format (masalan, \"Nf6\"). UCI — odatda şaxmat dvigatellarida qöllaniladi (masalan, \"g8f6\").</string>
+  <string name="keywords">Kalit sözlar</string>
+  <string name="keywordFormatDescription">Kalit sözlar JSON formatida berilgan. Ular yurişlar va öyin natijalarini öz tilingizga tarjima qiliş uçun işlatiladi. Standart holatda ingliz tili örnatilgan, ammo uni xohişingizga köra özgartirişingiz mumkin.</string>
+  <string name="debug">Nosozliklarni aniqlaş (Debug)</string>
+  <string name="verboseLogging">Batafsil xatoliklar hisoboti (Verbose debugging)</string>
+  <string name="toSeeConsoleMessage">Konsol xabarlarini köriş uçun Macʼda Command + Option + C, Windows, Linux yoki Çrome OS tizimlarida esa Control + Şift + C tugmalarini bosing</string>
+  <string name="playWithDgtBoard">DGT taxtasida öynaş</string>
+  <string name="configure">Sozlaş</string>
+</resources>

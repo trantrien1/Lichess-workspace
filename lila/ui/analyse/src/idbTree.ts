@@ -1,0 +1,264 @@
+import { memoize } from 'lib';
+import { objectStorage } from 'lib/objectStorage';
+import { completeNode } from 'lib/tree/node';
+import * as treeOps from 'lib/tree/ops';
+import type { ClientEval, LocalEval, TreeNodeLite, TreePath } from 'lib/tree/types';
+
+import type AnalyseCtrl from './ctrl';
+import type { AnalysisMeta } from './interfaces';
+import type { LocalAnalysisResult, ServerAnalysisDocument } from './local/localAnalysisEngine';
+import { pruneMainlineAnalysis } from './util';
+
+export type DiscloseState = undefined | 'expanded' | 'collapsed';
+export class IdbTree {
+  private readonly cacheMap = new Map<string, State>();
+  private readonly collapseDb = memoize(() => objectStorage<TreePath[]>({ store: 'analyse-collapse' }));
+  private readonly moveDb = memoize(() =>
+    objectStorage<{ root: TreeNodeLite | undefined }>({ store: 'analyse-state', db: 'lichess' }),
+  );
+  private readonly cevalDb = memoize(() =>
+    objectStorage<{ path: TreePath; ceval: LocalEval }, [string, TreePath]>({ store: 'analyse-ceval' }),
+  );
+  private readonly analysisDb = memoize(() =>
+    objectStorage<LocalAnalysisResult>({ store: 'analyse-static' }),
+  );
+
+  constructor(private readonly ctrl: AnalyseCtrl) {}
+
+  someCollapsedOf(collapsed: boolean, path = ''): boolean {
+    return (
+      this.ctrl.settings.disclosureMode &&
+      this.ctrl.tree.walkUntilTrue(
+        (n, m) => this.isCollapsible(n, m) && collapsed === Boolean(n.collapsed),
+        path,
+        path !== '',
+      )
+    );
+  }
+
+  stepLine(fromPath: TreePath = this.ctrl.path, which: 'prev' | 'next' = 'next'): TreePath {
+    let [path, kids] = this.familyOf(fromPath);
+    while (path && kids.length < 2 && !this.ctrl.tree.pathIsMainline(path)) {
+      [path, kids] = this.familyOf(path);
+    }
+    const i = kids.findIndex(k => fromPath.slice(path.length).startsWith(k.id));
+    const stepTo = which === 'next' ? (kids[i + 1] ?? kids[0]) : (kids[i - 1] ?? kids[kids.length - 1]);
+    return !stepTo ? fromPath : path + stepTo.id;
+  }
+
+  setCollapsed(path: TreePath, collapsed: boolean): void {
+    this.ctrl.tree.updateAt(path, n => (n.collapsed = collapsed));
+    this.saveCollapsed();
+    this.ctrl.redraw();
+  }
+
+  setCollapsedFrom(from: TreePath, collapsed: boolean, thisBranchOnly = false): void {
+    this.ctrl.tree.walkUntilTrue(
+      (n, m) => {
+        if (this.isCollapsible(n, m)) n.collapsed = collapsed;
+        return false;
+      },
+      from,
+      thisBranchOnly,
+    );
+    this.saveCollapsed();
+    this.ctrl.redraw();
+  }
+
+  revealNode(path?: string): void {
+    let save = false;
+    const nodes = path === undefined ? this.ctrl.nodeList : this.ctrl.tree.getNodeList(path);
+    for (let i = 0; i < nodes.length; i++) {
+      const kid = nodes[i].children[0];
+      if (nodes[i].collapsed && kid && nodes[i + 1] && kid !== nodes[i + 1]) {
+        nodes[i].collapsed = false;
+        save = true;
+      }
+    }
+    if (save) this.saveCollapsed();
+  }
+
+  discloseOf(node: TreeNodeLite | undefined, isMainline: boolean): DiscloseState {
+    if (!node) return undefined;
+    return this.isCollapsible(node, isMainline)
+      ? this.ctrl.settings.disclosureMode && node.collapsed
+        ? 'collapsed'
+        : 'expanded'
+      : undefined;
+  }
+
+  onAddNode(node: TreeNodeLite, path: TreePath): void {
+    if (this.noop || this.cache.movesDirty) return;
+    this.cache.movesDirty = !this.ctrl.tree.pathExists(path + node.id);
+  }
+
+  clear = async (what?: 'analysis' | 'ceval' | 'collapse' | 'moves'): Promise<void> => {
+    if (this.noop) return;
+    await Promise.all([
+      (!what || what === 'ceval') && this.cevalDb().then(db => db.remove(this.cevalRange())),
+      (!what || what === 'analysis') && this.analysisDb().then(db => db.removeVerified(this.id)),
+      (!what || what === 'collapse') && this.collapseDb().then(db => db.remove(this.id)),
+      !this.ctrl.study && (!what || what === 'moves') && this.moveDb().then(db => db.remove(this.id)),
+    ]);
+    if (what !== 'analysis') site.reload();
+    else this.cache.localAnalysis = undefined;
+  };
+
+  async saveMoves(force = false): Promise<IDBValidKey | undefined> {
+    if (this.noop || this.ctrl.study || !(this.cache.movesDirty || force)) return undefined;
+    const root = treeOps.structuredCloneLite(this.ctrl.tree.root);
+    treeOps.updateAll(root, node => {
+      delete node.ceval;
+      delete node.threat;
+    });
+    pruneMainlineAnalysis(root);
+    return this.moveDb().then(db => db.put(this.id, { root }));
+  }
+
+  async saveAnalysis(analysis: LocalAnalysisResult) {
+    if (this.noop) return undefined;
+    this.cache.localAnalysis = analysis.localUpdate.analysis;
+    return this.analysisDb().then(db => db.putVerified(this.id, analysis));
+  }
+
+  async serverDocument(): Promise<ServerAnalysisDocument | undefined> {
+    return this.analysisDb()
+      .then(db => db.getVerified(this.id))
+      .then(result => result?.serverDocument);
+  }
+
+  async saveCeval(path: TreePath, ceval: ClientEval): Promise<IDBValidKey | undefined> {
+    if (this.noop || ceval.cloud) return undefined;
+    const id = this.id;
+    this.cache.cevals.set(path, ceval);
+    return this.cevalDb().then(db => db.put([id, path], { path, ceval }));
+  }
+
+  async load(): Promise<void> {
+    if (this.noop || !('indexedDB' in window) || !window.indexedDB) return;
+    try {
+      this.cacheMap.set(this.id, { movesDirty: false, cevals: new Map() });
+      const [analysis, collapsedPaths, moves, cevals] = await Promise.all([
+        this.analysisDb().then(db => db.getVerified(this.id)),
+        this.collapseDb().then(db => db.getOpt(this.id)),
+        !this.ctrl.study && this.moveDb().then(db => db.getOpt(this.id)),
+        this.cevalDb().then(db => db.getMany(this.cevalRange(this.id))),
+      ]);
+      if (analysis) {
+        this.cache.localAnalysis = analysis.localUpdate.analysis;
+        this.ctrl.mergeMainlineAnalysisData(analysis.localUpdate);
+      }
+      if (moves !== false && moves?.root) {
+        this.ctrl.tree.merge(completeNode(this.ctrl.variantKey)(moves.root));
+        this.cache.movesDirty = true;
+      }
+      for (const { path, ceval } of cevals) {
+        this.ctrl.tree.updateAt(path, node => {
+          if (node.fen === ceval.fen && this.ctrl.ceval.preferLatestEval(ceval, node.ceval)) {
+            ceval.engineId ??= 'legacy'; // for now this is preferable to a messy idb version upgrade
+            node.ceval = ceval;
+          }
+        });
+        this.cache.cevals.set(path, ceval);
+      }
+      if (!collapsedPaths) return this.collapseDefault();
+      for (const path of collapsedPaths) {
+        this.ctrl.tree.updateAt(path, n => (n.collapsed = true));
+      }
+    } catch (e) {
+      console.log('IDB error.', e);
+    }
+  }
+
+  get hasLocalCeval(): boolean {
+    return this.cache.cevals.size > 0;
+  }
+
+  get hasLocalAnalysis(): boolean {
+    return Boolean(this.cache.localAnalysis);
+  }
+
+  get localAnalysis(): AnalysisMeta | undefined {
+    return this.cache.localAnalysis;
+  }
+
+  get localAnalysisNpm(): number | undefined {
+    return this.cache.localAnalysis?.engine?.nodesPerMove;
+  }
+
+  get movesDirty(): boolean {
+    return this.cache.movesDirty;
+  }
+
+  get id(): string {
+    return this.ctrl.opts.study?.chapter.id ?? this.ctrl.data.game.id;
+  }
+
+  private get noop(): boolean {
+    return this.id === 'synthetic';
+  }
+
+  private get cache() {
+    if (this.cacheMap.has(this.id)) return this.cacheMap.get(this.id)!;
+    const state: State = { movesDirty: false, cevals: new Map() };
+    this.cacheMap.set(this.id, state);
+    return state;
+  }
+
+  private cevalRange(id = this.id): IDBKeyRange {
+    return IDBKeyRange.bound([id], [id, []]);
+  }
+
+  private async saveCollapsed() {
+    return this.collapseDb().then(db => db.put(this.id, this.getCollapsed()));
+  }
+
+  private isCollapsible(node: TreeNodeLite, isMainline: boolean): boolean {
+    if (!node) return false;
+    const [first, second, third] = node.children.filter(
+      n => this.ctrl.settings.showMainlineAnalysis || !n.comp,
+    );
+    return Boolean(
+      first?.forceVariation ||
+      third ||
+      (second && treeOps.hasBranching(second, 6)) ||
+      (isMainline &&
+        this.ctrl.treeView.mode === 'column' &&
+        (second || first?.comments?.filter(Boolean).filter(comment => !comment.comp).length)),
+    );
+  }
+
+  private getCollapsed(): TreePath[] {
+    const collapsedPaths: TreePath[] = [];
+    function traverse(node: TreeNodeLite, path: TreePath): void {
+      if (node.collapsed) collapsedPaths.push(path);
+      for (const c of node.children) traverse(c, path + c.id);
+    }
+    traverse(this.ctrl.tree.root, '');
+    return collapsedPaths;
+  }
+
+  private collapseDefault() {
+    const depthThreshold = 1;
+
+    const traverse = (node: TreeNodeLite, depth: number) => {
+      if (depth === depthThreshold && this.isCollapsible(node, false)) {
+        node.collapsed = true;
+      }
+      node.children.forEach((n, i) => traverse(n, depth + (i === 0 ? 0 : 1)));
+    };
+    traverse(this.ctrl.tree.root, 0);
+  }
+
+  private familyOf(path: TreePath): [TreePath, TreeNodeLite[]] {
+    const parentPath = path.slice(0, -2);
+    return [
+      parentPath,
+      this.ctrl.tree
+        .nodeAtPath(parentPath)
+        .children.filter(x => !x.comp || this.ctrl.settings.showMainlineAnalysis),
+    ];
+  }
+}
+
+type State = { movesDirty: boolean; cevals: Map<TreePath, LocalEval>; localAnalysis?: AnalysisMeta };

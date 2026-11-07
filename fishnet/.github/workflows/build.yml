@@ -1,0 +1,278 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - '**'
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  linux:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+      - uses: docker/setup-buildx-action@v4
+        id: setup-buildx
+        with:
+          platforms: linux/amd64,linux/arm64
+      - uses: actions/cache@v6
+        id: cache
+        with:
+          path: ${{ runner.temp }}/cache-mount
+          key: cache-mount-${{ github.run_id }}
+          restore-keys: |
+            cache-mount
+      - uses: reproducible-containers/buildkit-cache-dance@2925f5cfd92896e0f5a155899ff2ed2922b575c6 # v3.4.0
+        with:
+          builder: ${{ steps.setup-buildx.outputs.name }}
+          cache-dir: ${{ runner.temp }}/cache-mount
+      - uses: docker/build-push-action@v7
+        id: docker_build_amd64
+        with:
+          context: .
+          platforms: amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+          load: true
+      - uses: docker/build-push-action@v7
+        id: docker_build_arm64
+        with:
+          context: .
+          platforms: arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max,ignore-error=true
+          load: true
+      - uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+        if: github.event_name == 'push'
+      - uses: docker/metadata-action@v6
+        id: meta
+        with:
+          images: ${{ vars.DOCKERHUB_USERNAME }}/fishnet
+          tags: |
+            type=ref,event=branch
+            type=semver,pattern={{major}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.licenses=GPL-3.0-or-later
+        if: github.event_name == 'push'
+      - uses: docker/build-push-action@v7
+        id: docker_push
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+        if: github.event_name == 'push'
+      - run: docker cp "$(docker create ${{ steps.docker_build_amd64.outputs.imageid }}):/fishnet" fishnet-x86_64-unknown-linux-musl
+      - run: docker cp "$(docker create ${{ steps.docker_build_arm64.outputs.imageid }}):/fishnet" fishnet-aarch64-unknown-linux-musl
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fishnet-x86_64-unknown-linux-musl
+          path: fishnet-x86_64-unknown-linux-musl
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fishnet-aarch64-unknown-linux-musl
+          path: fishnet-aarch64-unknown-linux-musl
+  windows-x86-64:
+    runs-on: windows-2022
+    permissions:
+      contents: read
+    outputs:
+      artifact-id: ${{ steps.upload-unsigned-artifact.outputs.artifact-id }}
+    defaults:
+      run:
+        shell: msys2 {0}
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: mingw64
+          update: true
+          install: git mingw-w64-x86_64-sccache mingw-w64-x86_64-gcc mingw-w64-x86_64-rust mingw-w64-x86_64-make tar
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/sccache
+          key: sccache-windows-x86-64-${{ github.run_id }}
+          restore-keys: |
+            sccache-windows-x86-64
+      - run: SCCACHE_CACHE_SIZE=250M SCCACHE_DIR=${{ runner.temp }}/sccache sccache --start-server
+      - run: sccache --show-stats
+      - uses: actions/checkout@v7
+        with:
+          repository: lichess-org/intel-sde
+          ssh-key: ${{ secrets.ID_RSA_INTEL_SDE }}
+          ref: main
+          path: intel-sde
+        id: sde
+        continue-on-error: true
+      - run: tar xf intel-sde/sde-external-9.0.0-2021-11-07-win.tar.xz && echo SDE_PATH=$(cygpath -u $GITHUB_WORKSPACE)/sde-external-9.0.0-2021-11-07-win/sde.exe | tee $GITHUB_ENV
+        if: steps.sde.outcome == 'success'
+      - run: cargo build --release --target x86_64-pc-windows-gnu -vv
+      - run: mv target/x86_64-pc-windows-gnu/release/fishnet.exe fishnet-x86_64-pc-windows-gnu-unsigned.exe
+      - uses: actions/upload-artifact@v7
+        id: upload-unsigned-artifact
+        with:
+          name: fishnet-x86_64-pc-windows-gnu-unsigned
+          path: fishnet-x86_64-pc-windows-gnu-unsigned.exe
+      - run: sccache --stop-server
+  macos-x86-64:
+    runs-on: macos-15-intel
+    permissions:
+      contents: read
+    env:
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: sccache
+      - uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/sccache
+          key: macos-x86-64-sccache-${{ github.run_id }}
+          restore-keys: |
+            macos-x86-64-sccache
+      - run: SCCACHE_CACHE_SIZE=250M SCCACHE_DIR=${{ runner.temp }}/sccache sccache --start-server
+      - run: sccache --show-stats
+      - run: cargo install --force cargo-auditable
+      - run: cargo auditable build --release -vv
+      - run: mv target/release/fishnet fishnet-x86_64-apple-darwin
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fishnet-x86_64-apple-darwin
+          path: fishnet-x86_64-apple-darwin
+      - run: sccache --stop-server
+  macos-aarch64:
+    runs-on: macos-15
+    permissions:
+      contents: read
+    env:
+      CXXFLAGS: -target arm64-apple-macos11
+      RUSTC_WRAPPER: sccache
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: sccache
+      - uses: actions/cache@v6
+        with:
+          path: ${{ runner.temp }}/sccache
+          key: macos-aarch64-sccache-${{ github.run_id }}
+          restore-keys: |
+            macos-aarch64-sccache
+      - run: SCCACHE_CACHE_SIZE=250M SCCACHE_DIR=${{ runner.temp }}/sccache sccache --start-server
+      - run: sccache --show-stats
+      - run: cargo install --force cargo-auditable
+      - run: cargo auditable build --release --target aarch64-apple-darwin -vv
+      - run: mv target/aarch64-apple-darwin/release/fishnet fishnet-aarch64-apple-darwin
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fishnet-aarch64-apple-darwin
+          path: fishnet-aarch64-apple-darwin
+      - run: sccache --stop-server
+  windows-x86-64_signed:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment:
+      name: ${{ startsWith(github.ref, 'refs/tags/v') && 'signpath_release' || 'signpath_test' }}
+    needs:
+      - windows-x86-64
+    if: github.event_name == 'push'
+    steps:
+      - uses: signpath/github-action-submit-signing-request@v2
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: 'fishnet'
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ needs.windows-x86-64.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 7200
+          output-artifact-directory: signed
+      - run: mv signed/fishnet-x86_64-pc-windows-gnu-unsigned.exe signed/fishnet-x86_64-pc-windows-gnu.exe
+      - uses: actions/upload-artifact@v7
+        with:
+          name: fishnet-x86_64-pc-windows-gnu
+          path: signed
+  github_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    needs:
+      - linux
+      - windows-x86-64_signed
+      - macos-x86-64
+      - macos-aarch64
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        id: get_version
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+      - run: sha256sum fishnet-*
+      - uses: softprops/action-gh-release@v3
+        with:
+          name: fishnet ${{ steps.get_version.outputs.VERSION }}
+          body: |
+            Downloads:
+
+            * [fishnet-x86_64-unknown-linux-musl](https://fishnet-releases.s3.dualstack.eu-west-3.amazonaws.com/${{ steps.get_version.outputs.VERSION }}/fishnet-x86_64-unknown-linux-musl)
+            * [fishnet-x86_64-pc-windows-gnu.exe](https://fishnet-releases.s3.dualstack.eu-west-3.amazonaws.com/${{ steps.get_version.outputs.VERSION }}/fishnet-x86_64-pc-windows-gnu.exe)
+            * [fishnet-x86_64-apple-darwin](https://fishnet-releases.s3.dualstack.eu-west-3.amazonaws.com/${{ steps.get_version.outputs.VERSION }}/fishnet-x86_64-apple-darwin)
+            * [fishnet-aarch64-unknown-linux-musl](https://fishnet-releases.s3.dualstack.eu-west-3.amazonaws.com/${{ steps.get_version.outputs.VERSION }}/fishnet-aarch64-unknown-linux-musl)
+            * [fishnet-aarch64-apple-darwin](https://fishnet-releases.s3.dualstack.eu-west-3.amazonaws.com/${{ steps.get_version.outputs.VERSION }}/fishnet-aarch64-apple-darwin)
+          generate_release_notes: true
+          draft: true
+          files: fishnet-*
+          fail_on_unmatched_files: true
+  s3_release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    environment:
+      name: s3
+    needs: github_release
+    steps:
+      - run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        id: get_version
+      - uses: actions/download-artifact@v8
+        with:
+          merge-multiple: true
+      - run: sha256sum fishnet-*
+      - uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-access-key-id: ${{ secrets.AWS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-west-3
+      - run: aws s3 cp . "s3://fishnet-releases/${{ steps.get_version.outputs.VERSION }}/" --recursive --exclude '*' --include 'fishnet-*'

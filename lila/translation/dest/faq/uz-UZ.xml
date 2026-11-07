@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="faqAbbreviation">FAQ</string>
+  <string name="frequentlyAskedQuestions">Tez‑tez söraladigan savollar</string>
+  <string name="whyIsLichessCalledLichess">Lichess nimaga Lichess deb nomlangan?</string>
+  <string name="lichessCombinationLiveLightLibrePronounced">Lichess bu live/light/libre va chess sözlarining kombinatsiyasi. %1$s deb talaffuz qilinadi.</string>
+  <string name="leechess">li‑çes</string>
+  <string name="hearItPronouncedBySpecialist">Mutaxassis talaffuzini eşiting.</string>
+  <string name="whyLiveLightLibre">Jonli (live) — çunki öyinlar haftasiga 7 kun kuniga 24 soat real vaqt rejimida öynaladi va kuzatiladi; yengil (light) va erkin (libre) — çunki Lichess oçiq kodli loyiha bölib, boşqa saytlarga xos bölgan xususiy va keraksiz çiqindilardan xolidir.</string>
+  <string name="whyIsLilaCalledLila">Şuningdek, Lichessʼning dastur kodi — \'%1$s\' nomi ham li[chess in sca]la sözlaridan olingan. Buning sababi, Lichessʼning asosiy qismi intuitiv tuşunarli dasturlaş tili bölmiş %2$sʼda yozilgan.</string>
+  <string name="howCanIContributeToLichess">Lichessʼga qanday qilib hissa qöşişim mumkin?</string>
+  <string name="lichessPoweredByDonationsAndVolunteers">Lichess homiylar tomonidan beriladigan donatlar va köngillilar jamoasining saʼy‑harakatlari asosida faoliyat yuritadi.</string>
+  <string name="findMoreAndSeeHowHelp">%1$s haqida (şu jumladan, %2$s bilan) köproq maʼlumot olişingiz mumkin. Agar öz vaqtingiz va mahoratingiz bilan Lichessʼga köngilli sifatida yordam bermoqçi bölsangiz, kömaklaşişning yana köplab %3$s ham mavjud.</string>
+  <string name="beingAPatron">Homiy böliş</string>
+  <string name="breakdownOfOurCosts">xarajatlarimizning batafsil hisoboti</string>
+  <string name="otherWaysToHelp">boşqa usullari</string>
+  <string name="areThereWebsitesBasedOnLichess">Lichessʼga asoslangan boşqa veb‑saytlar bormi?</string>
+  <string name="yesLichessInspiredOtherOpenSourceWebsites">\"Ha. Haqiqatan ham Lichess bizning %1$s, %2$s yoki %3$s foydalanadigan boşqa oçiq kodli saytlarni ilhomlantirgan.</string>
+  <string name="keyboardShortcuts">Qanday klaviatura yorliqlari mavjud?</string>
+  <string name="keyboardShortcutsExplanation">Lichessʻning ayrim sahifalarida klaviatura yorliqlarini işlatsangiz böladi. Mavjud klaviatura yorliqlarini köriş uçun örganiş, tahlil, masala yoki öyin sahifasida \'?\' tugmasini bosing.</string>
+  <string name="fairPlay">Halol öyin</string>
+  <string name="whenAmIEligibleRatinRefund">Qaçon ğirromçilar sababli yöqotilgan reytingim avtomatik ravişda qaytariladi?</string>
+  <string name="ratingRefundExplanation">Öyinçi ğirromlik qilgani uçun belgilanganidan bir minut ötgaç, uning sönggi 5 kun içidagi 40 ta reytingli öyini tahlil qilinadi. Agar siz öşa öyinlarning birida unga raqib bölgan bölsangiz va (mağlubiyat yoki durang sababli) reyting yöqotgan bölsangiz va reytingingiz aniq bölsa, sizga reytingingiz qaytarib beriladi. Qaytariladigan reyting miqdori öşa öyindan keyingi reytingingiz va sizning eng yuqori reytingingizga qarab çeklanişi mumkin. (Masalan, agar öşa öyindan keyin reytingingiz sezilarli darajada oşgan bölsa, sizga ball qaytarilmasligi yoki faqat qisman qaytarilişi mumkin.) Qaytariladigan reyting miqdori heç qaçon 150 oçkodan oşmaydi.</string>
+  <string name="preventLeavingGameWithoutResigning">Öyinni taslim bölmasdan taşlab ketadigan öyinçilarga nisbatan qanday çoralar köriladi?</string>
+  <string name="leavingGameWithoutResigningExplanation">Agar raqibingiz öyinlarni tez‑tez bekor qilsa yoki oxiriga yetkazmasdan taşlab ketsa, unga \"öyin taqiqi\" beriladi — ya’ni u maʼlum muddat öyin öynay olmaydi. Bu çeklov foydalanuvçi profilida ommaga körsatilmaydi. Agar bunday holat takrorlanaversa, taqiq muddati uzayib boradi. Tartibni muntazam buziş esa akkauntning butunlay yopilişiga olib kelişi mumkin.</string>
+  <string name="howCanIBecomeModerator">Qanday qilib moderator bölişim mumkin?</string>
+  <string name="youCannotApply">Moderatorlikka ariza topşirişning iloji yöq. Agar biz kimnidir bu vazifaga munosib deb bilsak, u bilan şaxsan özimiz boğlanamiz.</string>
+  <string name="isCorrespondenceDifferent">Yozişmali öyin normal şaxmatdan qanday farqlanadi?</string>
+  <string name="pleaseReadFairPlayPage">Batafsil maʼlumot uçun %s sahifamizni öqing</string>
+  <string name="fairPlayPage">halol öyin</string>
+  <string name="youCanUseOpeningBookNoEngine">Lichessʼda yozişmali şaxmat qoidalari uçun asosiy farqi — debyut kitoblaridan foydalanişga ruxsat berilganidir. Dvigatellardan foydalaniş esa hamon qatʼiyan taqiqlangan va bu \"dvigatel yordami\" uçun profilga ğirromlik tamğasi bosilişiga olib keladi. Garçi ICCF yozişmali şaxmatda dvigatellardan foydalanişga ruxsat bersa‑da, Lichessʼda bu mumkin emas.</string>
+  <string name="gameplay">Öyin jarayoni</string>
+  <string name="howBulletBlitzEtcDecided">Bullet, Blits va boşqa vaqt nazoratlari qanday belgilanadi?</string>
+  <string name="basedOnGameDuration">Lichessʼda vaqt nazorati öyinning taxminiy davomiyligiga qarab belgilanadi. Bu quyidagi formula böyiça hisoblanadi:
+taxminiy davomiylik = %1$s
+
+Masalan, 5+3 vaqt nazoratidagi öyinning taxminiy davomiyligi: 5 × 60 + 40 × 3 = 420 sekundni taşkil qiladi.</string>
+  <string name="durationFormula">(soatdagi boşlanğiç vaqt, sekundlarda) + 40 × (qöşimça vaqt)</string>
+  <string name="inferiorThanXsEqualYtimeControl">≤ %1$s s = %2$s</string>
+  <string name="superiorThanXsEqualYtimeControl">≥ %1$s s = %2$s</string>
+  <string name="whatVariantsCanIplay">Lichessʼda şaxmatning qanday variantlarini öynay olaman?</string>
+  <string name="lichessSupportChessAnd">Lichess standart şaxmatni va yana %1$s qöllab‑quvvatlaydi.</string>
+  <string name="eightVariants">8 ta şaxmat variantini</string>
+  <string name="whatIsACPL">Örtaça santipiyoda yöqotiş (ACPL) nima?</string>
+  <string name="acplExplanation">Santipiyoda — şaxmatda ustunlikni ölçaş uçun işlatiladigan birlikdir. Bir santipiyoda piyodaning 1/100 qismiga teng. Demak, 100 santipiyoda = 1 piyoda. Bu qiymatlar öyinda rasmiy rol öynamaydi, ammo vaziyatni baholaşda şaxmatçilar uçun foydali va kompyuter şaxmati uçun zarurdir.
+
+Kompyuter körsatgan eng kuçli yuriş nol santipiyoda yöqotadi. Undan kuçsizroq yurişlar esa pozitsiyaning yomonlaşişiga olib keladi va bu santipiyodalar bilan ölçanadi.
+
+Uşbu qiymat öyin sifatining körsatkiçi sifatida işlatilişi mumkin. Har bir yurişda qança kam santipiyoda yöqotilsa, öyin şunçalik kuçli hisoblanadi.
+
+Lichess saytidagi kompyuter tahlillari Stockfiş dvijogi yordamida amalga oşiriladi.</string>
+  <string name="insufficientMaterial">Vaqt boy berilişi, durang va material yetmasligi</string>
+  <string name="lichessFollowFIDErules">Agarda öyinçining vaqti tugab qolsa, odatda u mağlub böladi. Biroq, agarda yuzaga kelgan vaziyatda raqib öyinçisi har qanday qonuniy yurişlar ketma‑ketligi bilan ham şohga mot qöya olmasa, öyin durang bilan yakunlanadi (%1$s).
+
+Ayrim hollarda buni avtomatik tarzda aniqlaş qiyin bölişi mumkin (majburiy yurişlar yoki \"qalʼa\" taktikasi). Bunday holatlarda, qoida tariqasida, vaqti tugamagan öyinçining foydasiga qaror qabul qilinadi.
+
+Şuni bilingki, agar raqibning öz donalari şohini yölini tösib qöysa, bitta ot yoki bitta fil bilan ham mot qiliş imkoni bor.</string>
+  <string name="fideHandbook">FIDE qöllanmasi</string>
+  <string name="fideHandbookX">FIDE qöllanmasi %s</string>
+  <string name="discoveringEnPassant">Nima uçun piyoda yonidan ötib ketgan boşqa bir piyodani urib olişi mumkin? (en passant)</string>
+  <string name="explainingEnPassant">Bu \"en passant\" deb nomlangan qonuniy yurişdir. Vikipediyadagi uşbu maqolada bu haqida %1$s berilgan.
+
+Uşbu qoida %2$sning 3.7.3.1 va 3.7.3.2‑bandlarida quyidagiça tavsiflanadi:
+
+\"Raqib piyodasi boşlanğiç katagidan ikki katak oldinga yurib, sizning piyodangiz bilan bir xil gorizontalga va qöşni vertikalga kelib qolsa, siz uşbu piyodani göyoki u bir katak yurganidek urib olişingiz mumkin. Bunday urib oliş faqat raqib piyodasi ikki katak yurganidan keyingi birinçi yurişdayoq amalga oşirilişi mumkin va bu ‘en passant’ deb ataladi.\"
+
+Uşbu yurişni maşq qiliş uçun %3$s sahifasiga öting.</string>
+  <string name="goodIntroduction">yaxşi maʼlumot</string>
+  <string name="lichessTraining">Lichess maşq</string>
+  <string name="watchIMRosenCheckmate">Xalqaro usta Erik Rozen %s orqali qanday mot qöyganini tomoşa qiling.</string>
+  <string name="threefoldRepetition">Uç marta takrorlaniş</string>
+  <string name="threefoldRepetitionExplanation">Agar bir xil pozitsiya uç marta takrorlansa, öyinçilar %1$s qoidasiga köra durang talab qilişlari mumkin. Lichess platformasida %2$sning 9.2‑moddasida körsatilgan rasmiy FIDE qoidalari amal qiladi.</string>
+  <string name="threefoldRepetitionLowerCase">uç marta takrorlaniş</string>
+  <string name="notRepeatedMoves">Biz yurişlarni takrorlamadik‑ku. Nega öyin baribir takrorlaniş tufayli durang bilan tugadi?</string>
+  <string name="repeatedPositionsThatMatters">Uç marta takrorlaniş qoidasi yurişlarga emas, balki takrorlangan %1$sga asoslanadi. Pozitsiyalar birin‑ketin takrorlanişi şart emas.</string>
+  <string name="positions">pozitsiyalar</string>
+  <string name="weRepeatedthreeTimesPosButNoDraw">Pozitsiyani uç marta takrorladik. Nega öyin durang bölmadi?</string>
+  <string name="threeFoldHasToBeClaimed">Uç marta takrorlanişda öyinçilardan biri durang talab qilişi kerak. Buning uçun ekranda paydo böladigan tugmani bosiş yoki pozitsiyani takrorlaydigan sönggi yurişingizdan oldin durang taklif qiliş kifoya. Raqibingiz taklifni rad etsa ham, baribir uç marta takrorlaniş qoidasi böyiça durang qayd etiladi. Şuningdek, Lichess platformasini takrorlanişlarni avtomatik ravişda qayd etadigan qilib %1$s mumkin. Bundan taşqari, beş marta takrorlaniş yuz bersa, öyin darhol va öz‑özidan yakunlanadi.</string>
+  <string name="configure">sozlaşingiz</string>
+  <string name="accounts">Akkauntlar</string>
+  <string name="titlesAvailableOnLichess">Lichessʼda qanday unvonlar bor?</string>
+  <string name="lichessRecognizeAllOTBtitles">Lichess barça FIDE unvonlarini va %1$s tan oladi. Quyida FIDE unvonlari röyxati keltirilgan:</string>
+  <string name="showYourTitle">Agar sizda rasmiy FIDE unvoningiz bölsa, %1$sni töldiriş orqali uni profilingizda körsatişni söraşingiz mumkin. Bunda şaxsingizni tasdiqlovçi hujjat/kartaning tasviri va uşbu hujjatni uşlab tuşgan selfi‑suratingiz talab qilinadi.
+
+Tasdiqlangan unvonli öyinçilar \"Titled Arena\" (Unvonli öyinçilar arenasi) musobaqalarida qatnaşiş huquqiga ega böladi.
+
+Şuningdek, faxriy %2$s unvoni ham mavjud.</string>
+  <string name="asWellAsManyNMtitles">köplab milliy master unvonlarini</string>
+  <string name="verificationForm">tasdiqlaş formasi</string>
+  <string name="canIbecomeLM">Lichess Master (LM) unvonini ololamanmi?</string>
+  <string name="noUpperCaseDot">Yöq.</string>
+  <string name="lMtitleComesToYouDoNotRequestIt">Uşbu faxriy unvon norasmiy bölib, u faqat Lichess platformasidagina mavjud.
+
+Biz bu unvonni kamdan‑kam hollarda — hamjamiyatda özini namunali tutgan va platforma rivojiga hissa qöşgan öyinçilarga, öz xohişimizga köra beramiz. LM unvoniga ariza topşirib bölmaydi, aksinça, u sizni özi topadi. Agar siz uşbu unvonga munosib deb topilsangiz, bizdan taklif xabar olasiz va unvonni qabul qiliş yoki rad etiş özingizga boğliq böladi.
+
+Iltimos, LM unvonini berişni sörab murojaat qilmang.</string>
+  <string name="whatUsernameCanIchoose">Foydalanuvçi nomi qanday bölişi kerak?</string>
+  <string name="usernamesNotOffensive">Umuman olganda, foydalanuvçi nomlari haqoratli bölmasligi, boşqa birovning nomidan oçilgan bölmasligi yoki reklama xarakterida bölmasligi lozim. %1$s haqida batafsil maʼlumot olişingiz mumkin.</string>
+  <string name="guidelines">Qoidalar</string>
+  <string name="canIChangeMyUsername">Foydalanuvçi nomimni özgartirsam böladimi?</string>
+  <string name="usernamesCannotBeChanged">Yöq, texnik va amaliy sabablarga köra foydalanuvçi nomlarini özgartirib bölmaydi. Foydalanuvçi nomlari juda köp joylarda muhrlanib qolgan: maʻlumotlar bazalari, eksportlar, tizim jurnallari (loglar) va odamlarning xotirasida. Faqat bir marta katta‑kiçik harflar körinişini (capitalization) sozlaşingiz mumkin.</string>
+  <string name="uniqueTrophies">Noyob kuboklar</string>
+  <string name="ownerUniqueTrophies">Uşbu kubok Lichess tarixida yagonadir — u faqat %1$s ismli foydalanuvçiga tegişli va boşqa heç kimda bölmaydi.</string>
+  <string name="aHourlyBulletTournament">bir soatlik Bullet turniri</string>
+  <string name="goldenZeeExplanation">Gap şundaki, ZugAddict strim paytida 2 soat davomida 1+0 vaqt nazoratida S.I. 8‑darajasini mağlub etişga harakat qiladi, biroq urinişlari besamar ketadi. Şunda Thibault unga agar buni strim davomida uddalasa, noyob kubok berişini vaʼda qiladi. Oradan bir soat ötgaç, ZugAddict Stockfişʼni mağlub etadi va vaʼda qilingan mukofot öz egasiga topşiriladi.</string>
+  <string name="lichessRatings">Lichess reytinglari</string>
+  <string name="whichRatingSystemUsedByLichess">Lichess qaysi reyting tizimidan foydalanadi?</string>
+  <string name="ratingSystemUsedByLichess">Reytinglar Mark Glikman tomonidan işlab çiqilgan Glicko‑2 uslubi asosida hisoblanadi. Bu hozirda juda ommabop usul bölib, köplab şaxmat taşkilotlari undan foydalanadi (faqat FIDE hali ham eskirgan Elo tizimida qolmoqda).
+
+Glicko tizimining asosiy farqi — reytingni hisoblaşda \"işonç oraliği\" (confidence interval) tuşunçasidan foydalanişidir. Saytda yangi röyxatdan ötganingizda, reytingingiz 1500 ± 1000 körinişida böladi. Bu yerda 1500 — sizning reytingingiz, 1000 esa öşa işonç oraliğini bildiradi.
+
+Sodda qilib aytganda, tizim sizning haqiqiy reytingingiz 500 va 2500 reyting örtasida ekanligiga 95% işonadi. Yaʼni, tizimda hozirça siz haqingizda aniq maʼlumot yöq. Şu sababli, endi boşlagan öyinçilarning reytingi har bir öyindan söng keskin özgaradi (bir neça yuz ballgaça). Biroq, reytinglari aniqlangan öyinçilarga qarşi bir neçta öyin öynaganingizdan söng, işonç oraliği torayib boradi va har bir öyindan keyin qöşiladigan yoki ayriladigan oçkolar miqdori kamayadi.
+
+Yana bir muhim jihati: agar maʼlum vaqt öyin öynamasangiz, işonç oraliği qayta kengaya boşlaydi. Bu esa uzoq tanaffusdan keyin qaytganingizda, mahoratingizdagi özgarişlarga qarab reytingingiz tezroq moslaşişiga (köproq oçqa beriş yoki ayirişga) yordam beradi.</string>
+  <string name="whatIsProvisionalRating">Nega reyting yonida söroq belgisi (?) turibdi?</string>
+  <string name="provisionalRatingExplanation">Söroq belgisi reytingningiz aniqlanmaganini bildiradi. Bunga quyidagilar sabab bölişi mumkin:</string>
+  <string name="notPlayedEnoughRatedGamesAgainstX">Öyinçi uşbu reyting toifasida hali %1$s bilan yetarliça öyin ötkazmagan.</string>
+  <string name="similarOpponents">darajasi yaqin bölgan raqiblar</string>
+  <string name="notPlayedRecently">Öyinçi yaqin orada deyarli öyin öynamagan. Öynalgan öyinlar soniga qarab, reyting qaytadan aniqlanmagan holatga ötişi uçun taxminan bir yillik tanaffus kifoya qiladi.</string>
+  <string name="ratingDeviationMorethanOneHundredTen">Aniqroq aytganda, bu Glicko‑2 tizimidagi oğiş (deviation) körsatkiçi 110 dan yuqori ekanini anglatadi. Oğiş — bu tizimning reytingga bölgan işonç darajasidir. Oğiş körsatkiçi qançalik past bölsa, reyting şunçalik barqaror hisoblanadi.</string>
+  <string name="howDoLeaderoardsWork">Reyting va peşqadamlar jadvali qanday işlaydi?</string>
+  <string name="inOrderToAppearsYouMust">Reyting böyiça %1$sga kiriş uçun siz quyidagi talablarga javob berişingiz kerak:</string>
+  <string name="ratingLeaderboards">peşqadamlar jadvali</string>
+  <string name="havePlayedMoreThanThirtyGamesInThatRating">uşbu yönalişda kamida 30 ta reytingli öyin öynagan bölişingiz,</string>
+  <string name="havePlayedARatedGameAtLeastOneWeekAgo">uşbu yönalişda oxirgi bir hafta içida kamida bitta reytingli öyin öynagan bölişingiz,</string>
+  <string name="ratingDeviationLowerThanXinChessYinVariants">reyting oğişi (rating deviation) körsatkiçi standart şaxmatda %1$s dan, variantlarda esa %2$s dan past bölişi,</string>
+  <string name="beInTopTen">uşbu yönaliş böyiça top 10 talik röyxatiga kirişingiz kerak.</string>
+  <string name="secondRequirementToStopOldPlayersTrustingLeaderboards">Ikkinçi talab platformadan foydalanmayotgan öyinçilar peşqadamlar jadvalini egallab turmasliklari uçun joriy etilgan.</string>
+  <string name="whyAreRatingHigher">Nega Lichess reytingi FIDE, USCF yoki ICC kabi taşkilotlarnikidan yuqoriroq?</string>
+  <string name="whyAreRatingHigherExplanation">Reyting raqamlariga absolyut bir qiymat deb qaramaslik kerak, ularni turli taşkilotlar bilan soliştiriş ham unçalik töğri emas. Çunki har bir platformaning öz öyinçilari va öziga xos hisoblaş usullari (Elo, Glicko‑1 yoki Glicko‑2) bor. Aynan mana şu farqlar yakuniy raqamlarning (reytinglarning) turliça çiqişiga sabab böladi.
+
+Reyting — bu şunçaki \"nisbiy\" körsatkiç. U faqat bir guruh öyinçilar içida kim kuçliroq ekanini va kimning ğalaba qozoniş imkoniyati yuqoriligini taxmin qiliş uçun xizmat qiladi. Atrofdagi boşqa öyinçilarning darajasi bilan soliştirilmasa, “mening reytingim falonça” degan gapning heç qanday maʼnosi qolmaydi.</string>
+  <string name="howToHideRatingWhilePlaying">Öyin paytida reytingni qanday yaşiriş mumkin?</string>
+  <string name="enableZenMode">Buning uçun %1$s bölimidan “Zen rejimi”ni yoqing yoki öyin paytida klaviaturadagi %2$s tugmasini bosing.</string>
+  <string name="displayPreferences">köriniş sozlamalaridagi</string>
+  <string name="connexionLostCanIGetMyRatingBack">Internet uzilişi yoki qotib qolişi (lag) sababli yutqazib qöydim. Reytingimni qaytarib olsam böladimi?</string>
+  <string name="weCannotDoThatEvenIfItIsServerSideButThatsRare">Afsuski, internet sustligi yoki aloqa uzilişi sababli yöqotilgan oçkolar qaytarib berilmaydi. Muammo siz tomonda böladimi yoki bizning serverda — buning ahamiyati yöq (garçi bizda bunday nosozliklar juda kam uçrasa‑da). Faqat bir holatda istisno bölişi mumkin: agar Lichess serveri qayta işga tuşişi natijasida vaqtingiz tugab yutqazsangiz, adolatsizlikka yöl qöymaslik uçun öyin natijasi biz tomondan bekor qilinadi.</string>
+  <string name="howToThreeDots">Qanday qilib...</string>
+  <string name="enableDisableNotificationPopUps">Bildirişnomalarni yoqiş yoki öçiriş mumkin?</string>
+  <string name="viewSiteInformationPopUp">Sayt haqida maʼlumot oliş oynasini köriş</string>
+  <string name="lichessCanOptionnalySendPopUps">Lichess ixtiyoriy ravişda qalqib çiquvçi bildirişnomalarni yuborişi mumkin. Masalan, sizning galingiz kelganida yoki şaxsiy xabar olganingizda.
+
+Buning uçun brauzeringizning manzillar satridagi lichess.org manzili yonidagi joylaşgan qulf belgisini bosing.
+
+Söngra, Lichessʼdan keladigan bildirişnomalarga ruxsat beriş yoki ularni bloklaşni tanlang.</string>
+  <string name="enableAutoplayForSoundsQ">Ovozlar avtomatik ijro etilsinmi?</string>
+  <string name="mostBrowsersPreventSoundAutoplay">Brauzerlar foydalanuvçilarni himoya qiliş uçun yangi taşrif buyurilgan sahifalarda ovozni avtomatik ijro etilişini taqiqlaydi.
+
+Brauzeringiz lichess.org saytiga ovoz çiqarişga ruxsat bermasa, ovozsiz belgisi paydo böladi. Bu çeklov odatda biror narsani bosganingizdan söng olib taşlanadi.
+Baʼzi mobil brauzerlarda donani suriş bosiş deb hisoblanmaydi. Bunday holda, har bir öyin boşida ovozga ruxsat beriş uçun taxtaga tegişingiz kerak.
+
+Bu sodir bölganda sizni ogohlantiriş uçun qizil ovozsiz belgisini körsatamiz. Aksariyat brauzerlarda lichess.org uçun ovozlarni aniq belgilab ruxsat berişingiz mumkin. Baʼzi ommabop brauzerlarning sönggi versiyalarida veb‑saytga audio ijro etişga ruxsat beriş böyiça körsatmalar:</string>
+  <string name="desktop">kompyuter versiyasi</string>
+  <string name="enableAutoplayForSoundsFirefox">1. lichess.org saytiga kiring.
+2. Linux/Windowsʼda Ctrl‑i yoki MacOSʼda cmd‑i tugmalarini bosing.
+3. Ruxsatlar (Permissions) bölimiga öting
+4. lichess.org uçun Audio va Video uzatişga ruxsat bering</string>
+  <string name="enableAutoplayForSoundsChromeSiteInformation" comment="Guidance for Google Chrome users on how to enable audio auto-play if they have sound issues.">1. lichess.org saytiga öting
+2. Manzil satridagi sayt maʼlumotlari belgisini bosing
+3. Sayt sozlamalarini bosing
+4. Tovuşga ruxsat bering</string>
+  <string name="enableAutoplayForSoundsSafari">1. lichess.org saytiga kiring
+2. Menyular satridagi Safari tugmasini bosing
+3. lichess.org uçun sozlamalar... (Settings for lichess.org) bölimini tanlang
+4. Barçasini avtomatik ijro etiş (Allow All Auto‑Play) bandiga ruxsat bering</string>
+  <string name="enableAutoplayForSoundsMicrosoftEdge">1. Yuqori öng burçakdagi uç nuqtani bosing
+2. Sozlamalar bölimiga kiring
+3. Cookie-fayllar va sayt ruxsatlari (Cookies and Site Permissions) bandini tanlang
+4. Pastga tuşib, Media kontentni avtomatik ijro etiş (Media autoplay) qismini bosing
+5. Ruxsat beriş (Allow) röyxatiga lichess.org saytini qöşing</string>
+  <string name="makeBotTitle">Lichessʼda bot yaratiş?</string>
+  <string name="makeBotDescription">Lichessʼda öynaş uçun &lt;a href=\'%1$s\'&gt;şaxsiy şaxmat botini&lt;/a&gt; yaratişni örganiş uçun &lt;a href=\'%2$s\'&gt;botlar yaratiş haqidagi uşbu maqolani&lt;/a&gt; öqing.</string>
+  <string name="stopMyselfFromPlaying">Öyinni bas qila olmayapman, nima qilsam böladi?</string>
+  <string name="mentalHealthCondition">alohida ruhiy kasallik</string>
+  <string name="lichessUserstyles">foydalanuvçi Lichess CSS stillari</string>
+  <string name="fewerLobbyPools">tez raqibni topiş röyxati qisqartirilgan</string>
+  <string name="adviceOnMitigatingAddiction">Bizga köpinça öyin öynaşga haddan taşqari ruju qöygan va özini töxtata olmayotgan foydalanuvçilar yordam sörab murojaat qilişadi.
+
+Lichess faqat foydalaniş şartlari buzilgan holatlardagina öyinçilarni çeklaydi, xolos. Şuning uçun biz öyin vaqtini nazorat qilişda maxsus dasturlardan foydalanişni tavsiya etamiz. Saytlarga kirişni çeklovçi %1$s, %2$s va %3$s kabi vositalar şular jumlasidandir. Agar saytga kirişni xohlasangiz‑u, lekin tez öyinlar (bullet/blits) sizni öziga tortaverişidan qoçmoqçi bölsangiz, %4$sdan foydalanib köring, masalan, mana bu variantda %5$s.
+
+Ba\'zi öyinçilar şaxmatga mukkasidan ketayotganlarini yoki bu odat qaramlikka aylanayotganini payqaşlari mumkin. Darhaqiqat, Jahon soğliqni saqlaş taşkiloti ham öyinga qaramlikni %6$s sifatida tan olgan. Uning asosiy belgilari: 1) öyinni töxtata olmaslik, 2) hayotdagi boşqa işlarni çetga surib, bor eʼtiborni faqat öyinga qaratiş va 3) salbiy oqibatlarga qaramay öyinni davom ettirişdir. Agar özingizda şunday holatni kuzatayotgan bölsangiz, bu haqida döstlaringiz, yaqinlaringiz yoki mutaxassis bilan maslahatlaşişingizni söraymiz.</string>
+</resources>

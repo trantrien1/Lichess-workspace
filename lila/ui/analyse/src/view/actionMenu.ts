@@ -1,0 +1,223 @@
+import { isEmpty } from 'lib';
+import { displayColumns } from 'lib/device';
+import type { ContinueMode, GameData } from 'lib/game';
+import { licon } from 'lib/licon';
+import { structuredCloneLite } from 'lib/tree/ops';
+import { domDialog, bind, dataIcon, hl, type VNode } from 'lib/view';
+
+import type { AutoplayDelay } from '@/autoplay';
+import type AnalyseCtrl from '@/ctrl';
+import * as pgnExport from '@/pgnExport';
+import { pruneMainlineAnalysis } from '@/util';
+
+import { showSettingsDialog } from './settingsView';
+
+interface AutoplaySpeed {
+  name: keyof I18n['site'];
+  delay: AutoplayDelay;
+}
+
+const baseSpeeds: AutoplaySpeed[] = [
+  { name: 'fast', delay: 1000 },
+  { name: 'slow', delay: 5000 },
+];
+
+const realtimeSpeed: AutoplaySpeed = {
+  name: 'realtimeReplay',
+  delay: 'realtime',
+};
+
+const cplSpeed: AutoplaySpeed = {
+  name: 'byCPL',
+  delay: 'cpl',
+};
+
+function autoplayButtons(ctrl: AnalyseCtrl): VNode {
+  const d = ctrl.data;
+  const speeds = [
+    ...baseSpeeds,
+    ...(d.game.speed !== 'correspondence' && !isEmpty(d.game.moveCentis) ? [realtimeSpeed] : []),
+    ...(d.analysis ? [cplSpeed] : []),
+  ];
+  return hl(
+    'div.autoplay',
+    speeds.map(speed => {
+      const active = ctrl.autoplay.getDelay() === speed.delay;
+      return hl(
+        'a.button',
+        {
+          class: { active, 'button-empty': !active },
+          hook: bind('click', () => ctrl.togglePlay(speed.delay), ctrl.redraw),
+        },
+        String(i18n.site[speed.name]),
+      );
+    }),
+  );
+}
+
+const hiddenInput = (name: string, value: string) => hl('input', { attrs: { type: 'hidden', name, value } });
+
+function studyButton(ctrl: AnalyseCtrl) {
+  if (ctrl.study || ctrl.ongoing) return undefined;
+  return hl(
+    'form',
+    {
+      attrs: { method: 'post', action: '/study/as' },
+      hook: bind('submit', e => {
+        const pgnInput = (e.target as HTMLElement).querySelector('input[name=pgn]') as HTMLInputElement;
+        if (pgnInput && (ctrl.synthetic || ctrl.idbTree.movesDirty)) {
+          const root = structuredCloneLite(ctrl.tree.root);
+          pruneMainlineAnalysis(root);
+          pgnInput.value = pgnExport.renderFullTxt(ctrl, root);
+        }
+      }),
+    },
+    [
+      !ctrl.synthetic && hiddenInput('gameId', ctrl.data.game.id),
+      hiddenInput('pgn', ''),
+      hiddenInput('orientation', ctrl.bottomColor()),
+      hiddenInput('variant', ctrl.data.game.variant.key),
+      hiddenInput('fen', ctrl.tree.root.fen),
+      hl('button', { attrs: { type: 'submit', 'data-icon': licon.StudyBoard } }, i18n.site.toStudy),
+    ],
+  );
+}
+
+export function view(ctrl: AnalyseCtrl): VNode {
+  const d = ctrl.data;
+  const canContinue = !ctrl.ongoing && d.game.variant.key === 'standard';
+  const canPractice = ctrl.isCevalAllowed() && !ctrl.isEmbed && !ctrl.isGamebook() && !ctrl.practice;
+  const canRetro = !ctrl.study && !ctrl.isEmbed && !ctrl.retro && ctrl.hasFullComputerAnalysis();
+  const linkAttrs = { rel: ctrl.isEmbed ? '' : 'nofollow', target: ctrl.isEmbed ? '_blank' : '' };
+
+  const tools = [
+    hl('div.action-menu__tools', [
+      hl(
+        'button',
+        {
+          hook: bind('click', () => {
+            ctrl.flip();
+            ctrl.actionMenu.toggle();
+            ctrl.redraw();
+          }),
+          attrs: { 'data-icon': licon.ChasingArrows, title: 'Hotkey: f' },
+        },
+        i18n.site.flipBoard,
+      ),
+      !ctrl.ongoing &&
+        hl(
+          'a',
+          {
+            attrs: {
+              'data-icon': licon.Pencil,
+              href: ctrl.boardEditorUrl(),
+              title: 'Hotkey: b',
+              ...linkAttrs,
+            },
+          },
+          i18n.site.boardEditor,
+        ),
+      displayColumns() === 1 &&
+        canPractice &&
+        hl(
+          'button',
+          { hook: bind('click', () => ctrl.togglePractice()), attrs: dataIcon(licon.Bullseye) },
+          i18n.site.practiceWithComputer,
+        ),
+      canRetro &&
+        hl(
+          'button',
+          { hook: bind('click', ctrl.toggleRetro, ctrl.redraw), attrs: dataIcon(licon.GraduateCap) },
+          i18n.site.learnFromYourMistakes,
+        ),
+      canContinue &&
+        hl(
+          'button',
+          {
+            hook: bind('click', () =>
+              domDialog({
+                closeButton: true,
+                cash: $('.continue-with.g_' + d.game.id),
+                modal: true,
+                show: true,
+                easyClose: 'clickOutside',
+              }),
+            ),
+            attrs: dataIcon(licon.Swords),
+          },
+          i18n.site.continueFromHere,
+        ),
+      studyButton(ctrl),
+      ctrl.canAnalyseMainline() &&
+        hl(
+          'button',
+          {
+            hook: bind('click', () => {
+              site.asset.loadEsm('analyse.local', { init: ctrl });
+              ctrl.actionMenu(false);
+              ctrl.redraw();
+            }),
+            attrs: dataIcon(licon.Cogs),
+          },
+          i18n.study.analysisEditor,
+        ),
+      (ctrl.idbTree.movesDirty || ctrl.idbTree.hasLocalAnalysis || ctrl.idbTree.hasLocalCeval) &&
+        hl(
+          'button',
+          {
+            attrs: {
+              'data-icon': licon.Trash,
+              title: i18n.site.clearLocalData,
+            },
+            hook: bind('click', () => ctrl.idbTree.clear()),
+          },
+          i18n.site.clearLocalData,
+        ),
+      hl(
+        'button',
+        {
+          attrs: { 'data-icon': licon.Gear, title: i18n.site.settings },
+          on: { click: () => showSettingsDialog(ctrl) },
+        },
+        i18n.site.settings,
+      ),
+    ]),
+  ];
+
+  return hl('div.action-menu.sub-box.reduced', [
+    hl('div.title', i18n.site.analysis),
+    hl('div.inner', [
+      tools,
+      ctrl.mainline.length > 4 && [hl('h2', i18n.site.replayMode), autoplayButtons(ctrl)],
+      canContinue &&
+        hl('div.continue-with.none.g_' + d.game.id, [
+          hl(
+            'a.button',
+            {
+              attrs: {
+                href: d.userAnalysis
+                  ? '/?fen=' + ctrl.encodeNodeFen() + '#ai'
+                  : contRoute(d, 'ai') + '?fen=' + ctrl.node.fen,
+                ...linkAttrs,
+              },
+            },
+            i18n.site.playAgainstComputer,
+          ),
+          hl(
+            'a.button',
+            {
+              attrs: {
+                href: d.userAnalysis
+                  ? '/?fen=' + ctrl.encodeNodeFen() + '#friend'
+                  : contRoute(d, 'friend') + '?fen=' + ctrl.node.fen,
+                ...linkAttrs,
+              },
+            },
+            i18n.site.challengeAFriend,
+          ),
+        ]),
+    ]),
+  ]);
+}
+
+const contRoute = (data: GameData, mode: ContinueMode): string => `/game/${data.game.id}/continue/${mode}`;

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="puzzles">Masalalar</string>
+  <string name="puzzleThemes">Masala mavzulari</string>
+  <string name="recommended">Tavsiya etilganlar</string>
+  <string name="phases">Öyin bosqiçlari</string>
+  <string name="motifs">Taktik usullar</string>
+  <string name="advanced">Murakkab</string>
+  <string name="lengths">Yurişlar soni</string>
+  <string name="mates">Motlar</string>
+  <string name="mateThemes">Mot mavzulari</string>
+  <string name="goals">Maqsadlar</string>
+  <string name="origin">Manba</string>
+  <string name="specialMoves">Maxsus yurişlar</string>
+  <string name="didYouLikeThisPuzzle">Uşbu masala yoqdimi?</string>
+  <string name="upVote">Masala yoqdi</string>
+  <string name="downVote">Masala yoqmadi</string>
+  <string name="yourPuzzleRatingWillNotChange">Masalalar böyiça reytingingiz özgarmaydi. Unutmang, masalalar yeçiş musobaqa emas. Reytingingiz şunçaki mahoratingizga mos keladigan eng yaxşi masalalarni tanlaşga yordam beradi.</string>
+  <string name="findTheBestMoveForWhite">Oqlar uçun eng yaxşi yurişni toping.</string>
+  <string name="findTheBestMoveForBlack">Qoralar uçun eng yaxşi yurişni toping.</string>
+  <string name="toGetPersonalizedPuzzles">Sizga moslaştirilgan masalalarni oliş uçun:</string>
+  <string name="puzzleId">Masala %s</string>
+  <string name="puzzleOfTheDay">Kun masalasi</string>
+  <string name="dailyPuzzle">Kun masalasi</string>
+  <string name="clickToSolve">Yeçiş uçun bosing</string>
+  <string name="goodMove">Yaxşi yuriş</string>
+  <string name="bestMove">Eng yaxşi yuriş!</string>
+  <string name="keepGoing">Davom eting…</string>
+  <string name="puzzleSuccess">Barakalla!</string>
+  <string name="puzzleComplete">Masala yeçildi!</string>
+  <string name="byOpenings">Debyutlar böyiça</string>
+  <string name="puzzlesByOpenings">Debyutlar böyiça masalalar</string>
+  <string name="openingsYouPlayedTheMost">Reytingli öyinlarda eng köp öynagan debyutlaringiz</string>
+  <string name="useFindInPage">Yoqtirgan debyutlaringizni topiş uçun brauzer menyusidagi \"Sahifadan izlaş\" funksiyasidan foydalaning!</string>
+  <string name="useCtrlF">Yoqtirgan debyutlaringizni topiş uçun Ctrl+f tugmalarini bosing!</string>
+  <string name="notTheMove">Bu yuriş notöğri!</string>
+  <string name="trySomethingElse">Boşqa yurişni sinab köring.</string>
+  <string name="ratingX">Reyting: %s</string>
+  <string name="hidden">yaşirilgan</string>
+  <plurals name="playedXTimes">
+    <item quantity="one">%s marta öynalgan</item>
+    <item quantity="other">%s marta öynalgan</item>
+  </plurals>
+  <string name="fromGameLink">%s öyinidan</string>
+  <string name="continueTraining">Maşğulotni davom ettiriş</string>
+  <string name="difficultyLevel">Qiyinlik darajasi</string>
+  <string name="normal">Normal</string>
+  <string name="easier">Osonroq</string>
+  <string name="easiest">Eng Oson</string>
+  <plurals name="nbPointsBelowYourPuzzleRating">
+    <item quantity="one">Masalalar reytingingizdan bir ball past</item>
+    <item quantity="other">Masalalar reytingingizdan %s ball past</item>
+  </plurals>
+  <string name="harder">Qiyinroq</string>
+  <string name="hardest">Eng Qiyin</string>
+  <plurals name="nbPointsAboveYourPuzzleRating">
+    <item quantity="one">Masalalar reytingingizdan bir ball yuqori</item>
+    <item quantity="other">Masalalar reytingingizdan %s ball yuqori</item>
+  </plurals>
+  <string name="example">Misol</string>
+  <string name="addAnotherTheme">Boşqa mavzu qöşiş</string>
+  <string name="nextPuzzle">Keyingi masala</string>
+  <string name="jumpToNextPuzzleImmediately">Keyingi masalaga darhol ötiş</string>
+  <string name="puzzleDashboard">Masalalar paneli</string>
+  <string name="improvementAreas">Ösiş imkoniyatlari</string>
+  <string name="strengths">Kuçli tomonlar</string>
+  <string name="history">Masalalar tarixi</string>
+  <string name="solved">yeçildi</string>
+  <string name="failed">xato</string>
+  <string name="streakDescription">Borgan sari qiyinlaşib boradigan masalalarni yeçing va ğalabalar seriyasini qayd eting. Vaqt çegaralanmagan, şuning uçun şoşilmasangiz ham böladi. Birgina xato yursangiz öyin tugaydi! Lekin har bir urinişda bitta yurişni ötkazib yuboriş imkoniga egasiz.</string>
+  <string name="yourStreakX">Sizning seriyangiz: %s</string>
+  <string name="streakSkipExplanation">Seriyangizni saqlab qoliş uçun uşbu yurişni ötkazib yuboring! Bu imkoniyatdan har bir urinişda faqat bir marta foydalaniş mumkin.</string>
+  <string name="continueTheStreak">Seriyani davom ettiriş</string>
+  <string name="newStreak">Yangi seriya</string>
+  <string name="fromMyGames">Mening öyinlarimdan</string>
+  <string name="lookupOfPlayer">Öyinçi partiyalaridan olingan masalalarni izlaş</string>
+  <string name="searchPuzzles">Masalalarni izlaş</string>
+  <string name="fromMyGamesNone">Bazada sizning öyinlaringizdan olingan masalalar hali yöq.
+
+Öyinlaringiz asosida masala yaratiliş imkoniyatini oşiriş uçun rapid va klassik yönalişlarida köproq partiyalar öynang!</string>
+  <plurals name="puzzlesFoundInUserGames">
+    <item quantity="one">%2$sʼni öyinlari orasida bitta masala topildi</item>
+    <item quantity="other">%2$sʼni öyinlari orasida %1$s ta masala topildi</item>
+  </plurals>
+  <string name="puzzleDashboardDescription">Şuğullaning, tahlil qiling, rivojlaning</string>
+  <plurals name="nbPlayed">
+    <item quantity="one">%s öynaldi</item>
+    <item quantity="other">%s öynaldi</item>
+  </plurals>
+  <plurals name="nbToReplay">
+    <item quantity="one">%s qaytadan yeçing</item>
+    <item quantity="other">%s qaytadan yeçing</item>
+  </plurals>
+  <string name="percentSolved">%s töğri yeçildi</string>
+  <string name="noPuzzlesToShow">Hali heç narsa yöq, avval bir neçta masala yeçib köring!</string>
+  <string name="improvementAreasDescription">Optimal ösiş uçun bular ustida şuğullaning!</string>
+  <string name="strengthDescription">Siz uşbu mavzularda eng yaxşi natija körsatmoqdasiz</string>
+</resources>

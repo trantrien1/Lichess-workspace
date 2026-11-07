@@ -1,0 +1,149 @@
+package lila.search
+package ingestor
+
+import cats.effect.IO
+import cats.syntax.all.*
+import com.mongodb.client.model.changestream.FullDocument
+import com.mongodb.client.model.changestream.OperationType.*
+import io.circe.*
+import mongo4cats.circe.*
+import mongo4cats.collection.MongoCollection
+import mongo4cats.database.MongoDatabase
+import mongo4cats.models.collection.ChangeStreamDocument
+import mongo4cats.operations.{ Aggregate, Filter, Projection }
+import org.typelevel.log4cats.syntax.*
+import org.typelevel.log4cats.{ Logger, LoggerFactory }
+
+import java.time.Instant
+import scala.concurrent.duration.*
+
+import Repo.{ *, given }
+
+object UblogRepo:
+
+  private val interestedOperations = List(DELETE, INSERT, REPLACE, UPDATE).map(_.getValue)
+
+  private val interestedFields =
+    List(
+      _id,
+      F.markdown,
+      F.title,
+      F.intro,
+      F.topics,
+      F.blog,
+      F.live,
+      F.livedAt,
+      F.likes,
+      F.language,
+      F.quality
+    )
+  private val postProjection = Projection.include(interestedFields)
+
+  private val interestedEventFields =
+    List("operationType", "clusterTime", "documentKey._id") ++ interestedFields.map("fullDocument." + _)
+  private val eventProjection = Projection.include(interestedEventFields)
+
+  private def aggregate() =
+    Aggregate
+      .matchBy(Filter.in("operationType", interestedOperations))
+      .combinedWith(Aggregate.project(eventProjection))
+
+  def apply(mongo: MongoDatabase[IO], config: IngestorConfig.Ublog)(using
+      LoggerFactory[IO]
+  ): IO[Repo[DbUblog]] =
+    given Logger[IO] = LoggerFactory[IO].getLogger
+    mongo.getCollectionWithCodec[DbUblog]("ublog_post").map(apply(config))
+
+  def apply(config: IngestorConfig.Ublog)(
+      posts: MongoCollection[IO, DbUblog]
+  )(using Logger[IO]): Repo[DbUblog] = new:
+
+    def fetchAll(since: Instant, until: Instant) =
+      val filter = range(F.livedAt)(since, until.some)
+      fs2.Stream.eval(info"Fetching blog posts from $since to $until") *>
+        posts
+          .find(filter)
+          .projection(postProjection)
+          .boundedStream(config.batchSize)
+          .chunkN(config.batchSize)
+          .map(_.toList)
+          .metered(1.second)
+          .map: docs =>
+            val (toDelete, toIndex) = docs.partition(!_.isLive)
+            Result(toIndex, toDelete.map(doc => Id(doc.id)), None)
+
+    def watch(since: Option[Instant]): fs2.Stream[IO, Result[DbUblog]] =
+      val builder = posts.watch(aggregate())
+      // skip the first event if we're starting from a specific timestamp
+      // since the event at that timestamp is already indexed
+      val skip = since.fold(0)(_ => 1)
+      since
+        .fold(builder)(x => builder.startAtOperationTime(x.asBsonTimestamp))
+        .fullDocument(FullDocument.UPDATE_LOOKUP) // this is required for update event
+        .batchSize(config.batchSize)
+        .boundedStream(config.batchSize)
+        .drop(skip)
+        .evalTap(x => debug"Ublog event: $x")
+        .groupWithin(config.batchSize, config.timeWindows.second)
+        .map(_.toList.distincByDocId)
+        .map: docs =>
+          val lastEventTimestamp = docs.flatten(using _.clusterTime.flatMap(_.asInstant)).maxOption
+          val (toDelete, toIndex) = docs.partition(_.isDelete)
+          Result(
+            toIndex.flatMap(_.fullDocument),
+            toDelete.flatMap(_.docId.map(Id.apply)),
+            lastEventTimestamp
+          )
+
+    extension (event: ChangeStreamDocument[DbUblog])
+      private def isDelete: Boolean =
+        event.operationType == DELETE || event.fullDocument.exists(!_.isLive)
+
+  object F:
+    val markdown = "markdown"
+    val title = "title"
+    val intro = "intro"
+    val blog = "blog"
+    val language = "language"
+    val likes = "likes"
+    val live = "live"
+    val livedAt = "lived.at"
+    val quality = "automod.quality"
+    val topics = "topics"
+
+case class DbUblog(
+    id: String, // _id
+    title: String,
+    intro: String,
+    markdown: String,
+    blog: String, // format: "user:authorId"
+    language: String,
+    likes: Int,
+    topics: List[String],
+    live: Boolean,
+    livedAt: Option[Instant], // lived.at
+    quality: Option[Int] // automod.quality
+):
+  def isLive: Boolean = live && !quality.exists(_ == 0)
+  def author: String = blog.split(":")(1)
+
+object DbUblog:
+  import UblogRepo.F
+  given Decoder[DbUblog] = Decoder.instance: c =>
+    for
+      id <- c.get[String](_id)
+      title <- c.get[String](F.title)
+      intro <- c.get[String](F.intro)
+      markdown <- c.get[String](F.markdown)
+      blog <- c.get[String](F.blog)
+      language <- c.get[String](F.language)
+      likes <- c.get[Int](F.likes)
+      topics <- c.get[List[String]](F.topics)
+      live <- c.get[Boolean](F.live)
+      livedAt <- c.downField("lived").get[Option[Instant]]("at")
+      quality <- c.downField("automod").get[Option[Int]]("quality")
+    yield DbUblog(id, title, intro, markdown, blog, language, likes, topics, live, livedAt, quality)
+
+  // We don't write to the database so we don't need to implement this
+  given Encoder[DbUblog] = new:
+    def apply(a: DbUblog): Json = ???

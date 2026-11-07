@@ -1,0 +1,203 @@
+package lila.search
+package ingestor
+
+import cats.effect.*
+import cats.syntax.all.*
+import chess.Clock.Config
+import chess.Speed
+import chess.format.FullFen
+import chess.variant.*
+import com.mongodb.client.model.changestream.FullDocument
+import com.mongodb.client.model.changestream.OperationType.*
+import io.circe.*
+import mongo4cats.circe.*
+import mongo4cats.collection.MongoCollection
+import mongo4cats.database.MongoDatabase
+import mongo4cats.models.collection.ChangeStreamDocument
+import mongo4cats.operations.{ Aggregate, Filter, Projection, Sort }
+import org.typelevel.log4cats.syntax.*
+import org.typelevel.log4cats.{ Logger, LoggerFactory }
+
+import java.time.Instant
+import scala.concurrent.duration.*
+
+import Repo.{ *, given }
+
+object GameRepo:
+
+  private val interestedOperations = List(UPDATE, DELETE).map(_.getValue)
+  private val eventFilter = Filter.in("operationType", interestedOperations)
+
+  private val interestedFields =
+    List(
+      "_id",
+      "us",
+      "wid",
+      "ca",
+      "ua",
+      "t",
+      "an",
+      "p0.e",
+      "p0.ai",
+      "p1.e",
+      "p1.ai",
+      "is",
+      "s",
+      "c",
+      "ra",
+      "v",
+      "so",
+      "w",
+      "if"
+    )
+  private val gameProjection = Projection.include(interestedFields)
+
+  private val interestedEventFields =
+    List("operationType", "clusterTime", "documentKey._id") ++ interestedFields.map("fullDocument." + _)
+  private val eventProjection = Projection.include(interestedEventFields)
+
+  // https://github.com/lichess-org/lila/blob/65e6dd88e99cfa0068bc790a4518a6edb3513f54/modules/gameSearch/src/main/GameSearchApi.scala#L52
+  val gameFilter: Filter =
+    // Filter games that finished
+    // https://github.com/lichess-org/scalachess/blob/18edf46a50445048fdc2ee5a83752e5b3884f490/core/src/main/scala/Status.scala#L18-L27
+    val statusFilter = Filter.gte("s", 30)
+    val noImportFilter = Filter.ne("so", 7)
+    // us is the list of user ids; missing or empty means all-anonymous game
+    val hasUserFilter = Filter.exists("us").and(Filter.ne("us", List.empty[String]))
+    statusFilter.and(noImportFilter).and(hasUserFilter)
+
+  // https://github.com/lichess-org/lila/blob/65e6dd88e99cfa0068bc790a4518a6edb3513f54/modules/gameSearch/src/main/GameSearchApi.scala#L52
+  val changeFilter: Filter =
+    // Filter games that finished
+    // https://github.com/lichess-org/scalachess/blob/18edf46a50445048fdc2ee5a83752e5b3884f490/core/src/main/scala/Status.scala#L18-L27
+    val statusFilter = Filter.gte("fullDocument.s", 30)
+    val noImportFilter = Filter.ne("fullDocument.so", 7)
+    // us is the list of user ids; missing or empty means all-anonymous game
+    val hasUserFilter =
+      Filter.exists("fullDocument.us").and(Filter.ne("fullDocument.us", List.empty[String]))
+    statusFilter.and(noImportFilter).and(hasUserFilter)
+
+  private val aggregate =
+    Aggregate.matchBy(eventFilter.and(changeFilter)).combinedWith(Aggregate.project(eventProjection))
+
+  def apply(mongo: MongoDatabase[IO], config: IngestorConfig.Game)(using
+      LoggerFactory[IO]
+  ): IO[Repo[DbGame]] =
+    given Logger[IO] = LoggerFactory[IO].getLogger
+    mongo.getCollectionWithCodec[DbGame]("game5").map(apply(config))
+
+  def apply(config: IngestorConfig.Game)(games: MongoCollection[IO, DbGame])(using
+      Logger[IO]
+  ): Repo[DbGame] = new:
+
+    def watch(since: Option[Instant]): fs2.Stream[IO, Result[DbGame]] =
+      changes(since)
+        .map: events =>
+          val lastEventTimestamp = events.lastOption.flatMap(_.clusterTime).flatMap(_.asInstant)
+          val (toDelete, toIndex) = events.partition(_.operationType == DELETE)
+          Result(
+            toIndex.flatMap(_.fullDocument),
+            toDelete.flatMap(_.docId.map(Id.apply)),
+            lastEventTimestamp
+          )
+
+    def fetchAll(since: Instant, until: Instant): fs2.Stream[IO, Result[DbGame]] =
+      val filter = range(F.createdAt)(since, until.some)
+      fs2.Stream.eval(info"Fetching games from $since to $until") *>
+        games
+          .find(filter.and(gameFilter))
+          .sort(Sort.desc(F.createdAt))
+          .projection(gameProjection)
+          .boundedStream(config.batchSize)
+          .chunkN(config.batchSize)
+          .map(_.toList)
+          .metered(config.meteredDuration) // to avoid overloading the elasticsearch
+          .map(ds => Result(ds, Nil, None))
+
+    private def changes(since: Option[Instant]): fs2.Stream[IO, List[ChangeStreamDocument[DbGame]]] =
+      val builder = games.watch(aggregate)
+      since
+        .fold(builder)(x => builder.startAtOperationTime(x.asBsonTimestamp))
+        .fullDocument(FullDocument.UPDATE_LOOKUP) // this is required for update event
+        .batchSize(config.batchSize)
+        .boundedStream(config.batchSize)
+        .groupWithin(config.batchSize, config.timeWindows.second)
+        .evalTap(
+          _.traverse_(x =>
+            info"Received $x without p0 or p1 fields".whenA(x.fullDocument.exists(_.shouldDebug))
+          )
+        )
+        .map(_.toList.distincByDocId)
+
+  object F:
+    val createdAt = "ca"
+
+type PlayerId = String
+case class DbGame(
+    id: String, // _id
+    players: List[PlayerId], // us
+    winnerId: Option[PlayerId], // wid
+    createdAt: Instant, // ca
+    movedAt: Option[Instant], // ua
+    ply: Int, // t
+    analysed: Option[Boolean], // an
+    whitePlayer: Option[DbPlayer], // p0
+    blackPlayer: Option[DbPlayer], // p1
+    playerIds: String, // is
+    status: Int, // s
+    encodedClock: Option[Array[Byte]], // c
+    rated: Option[Boolean], // ra
+    variant: Option[Int], // v
+    source: Option[Int], // so
+    winnerColor: Option[Boolean], // w
+    chess960StartingPosition: Option[String] // if
+):
+  def clockConfig: Option[Config] = encodedClock.flatMap(ClockDecoder.read)
+  def clockInit: Option[Int] = clockConfig.map(_.limitSeconds.value)
+  def clockInc: Option[Int] = clockConfig.map(_.incrementSeconds.value)
+  def whiteId: Option[PlayerId] = players.headOption
+  def blackId: Option[PlayerId] = players.lift(1)
+  def variantOrDefault: Variant = Variant.idOrDefault(variant.map(Variant.Id.apply))
+  def speed: Speed = Speed(clockConfig)
+  def loser: Option[PlayerId] = players.find(_.some != winnerId)
+  def aiLevel: Option[Int] = whitePlayer.flatMap(_.aiLevel).orElse(blackPlayer.flatMap(_.aiLevel))
+  def date: Instant = movedAt.getOrElse(createdAt)
+  def chess960Position: Option[Int] =
+    chess960StartingPosition.flatMap: str =>
+      Chess960.positionNumber(FullFen.clean(str))
+
+  def shouldDebug =
+    whitePlayer.isEmpty || blackPlayer.isEmpty
+
+object DbGame:
+  // format: off
+  given Decoder[DbGame] = Decoder.forProduct17(
+    "_id", "us", "wid", "ca", "ua", "t", "an", "p0", "p1", "is",
+    "s", "c", "ra", "v", "so", "w", "if")(DbGame.apply)
+  // format: on
+
+  // We don't write to the database so We don't need to implement this
+  given Encoder[DbGame] = new Encoder[DbGame]:
+    def apply(a: DbGame): Json = ???
+
+case class DbPlayer(
+    rating: Option[Int],
+    aiLevel: Option[Int]
+)
+
+object DbPlayer:
+  given Decoder[DbPlayer] = Decoder.forProduct2("e", "ai")(DbPlayer.apply)
+
+  given Encoder[DbPlayer] = new Encoder[DbPlayer]:
+    def apply(a: DbPlayer) = ???
+
+object ClockDecoder:
+  import chess.*
+  private def readClockLimit(i: Int) = Clock.LimitSeconds(if i < 181 then i * 60 else (i - 180) * 15)
+
+  private inline def toInt(inline b: Byte): Int = b & 0xff
+
+  def read(ba: Array[Byte]): Option[Clock.Config] =
+    ba.take(2).map(toInt) match
+      case Array(b1, b2) => Clock.Config(readClockLimit(b1), Clock.IncrementSeconds(b2)).some
+      case _ => None

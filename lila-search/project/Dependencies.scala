@@ -1,0 +1,82 @@
+import sbt.*
+import smithy4s.codegen.BuildInfo.version as smithy4sVersion
+import snapshot4s.BuildInfo.snapshot4sVersion
+
+object Dependencies:
+
+  val jitpack = "jitpack".at("https://jitpack.io")
+
+  object V:
+    val catsEffect = "3.7.0"
+    val catsMtl = "1.7.0"
+    val ciris = "3.15.0"
+    val chess = "17.16.0"
+    val decline = "2.6.2"
+    val elastic4s = "9.5.0"
+    val fs2 = "3.14.0"
+    val fs2Data = "1.14.1"
+    val http4s = "0.23.38"
+    val mongo4cats = "0.8.0"
+    val otel4sCore = "1.1.0"
+    val otel4sSdk = "0.19.4"
+    val otel4sHttp4s = "0.19.0"
+
+  def http4s(artifact: String) = "org.http4s" %% s"http4s-$artifact" % V.http4s
+  def smithy4s(artifact: String) = "com.disneystreaming.smithy4s" %% s"smithy4s-$artifact" % smithy4sVersion
+
+  val chess = "com.github.lichess-org.scalachess" %% "scalachess" % V.chess
+
+  val catsCore = "org.typelevel" %% "cats-core" % "2.13.0"
+  val catsEffect = "org.typelevel" %% "cats-effect" % V.catsEffect
+  val catsMtl = "org.typelevel" %% "cats-mtl" % V.catsMtl
+
+  val fs2 = "co.fs2" %% "fs2-core" % V.fs2
+  val fs2IO = "co.fs2" %% "fs2-io" % V.fs2
+  val fs2DataCsv = "org.gnieh" %% "fs2-data-csv" % V.fs2Data
+  val fs2DataCsvGeneric = "org.gnieh" %% "fs2-data-csv-generic" % V.fs2Data
+
+  val cirisCore = "is.cir" %% "ciris" % V.ciris
+  val cirisHtt4s = "is.cir" %% "ciris-http4s" % V.ciris
+
+  val http4sServer = http4s("ember-server")
+  val http4sClient = http4s("client")
+  val http4sEmberClient = http4s("ember-client")
+
+  lazy val smithy4sCore = smithy4s("core")
+  lazy val smithy4sHttp4s = smithy4s("http4s")
+  lazy val smithy4sHttp4sSwagger = smithy4s("http4s-swagger")
+  lazy val smithy4sJson = smithy4s("json")
+
+  val jsoniterCore = "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-core" % "2.37.10"
+  val jsoniterMacro = "com.github.plokhotnyuk.jsoniter-scala" %% "jsoniter-scala-macros" % "2.37.10"
+
+  val playWS = "org.playframework" %% "play-ahc-ws-standalone" % "3.0.13"
+
+  val elastic4sHttp4sClient = "nl.gn0s1s" %% "elastic4s-client-http4s" % V.elastic4s
+
+  val mongo4catsCore = "io.github.kirill5k" %% "mongo4cats-core" % V.mongo4cats
+  val mongo4catsCirce = "io.github.kirill5k" %% "mongo4cats-circe" % V.mongo4cats
+  val circe = "io.circe" %% "circe-core" % "0.14.17"
+
+  val log4Cats = "org.typelevel" %% "log4cats-slf4j" % "2.8.0"
+  val logback = "ch.qos.logback" % "logback-classic" % "1.6.1"
+  val ducktape = "io.github.arainko" %% "ducktape" % "0.2.13"
+
+  val otel4sCore = "org.typelevel" %% "otel4s-core" % V.otel4sCore
+  val otel4sInstrumentationMetrics = "org.typelevel" %% "otel4s-instrumentation-metrics" % V.otel4sCore
+  val otel4sPrometheusExporter = "org.typelevel" %% "otel4s-sdk-exporter-prometheus" % V.otel4sSdk
+  val otel4sSdk = "org.typelevel" %% "otel4s-sdk" % V.otel4sSdk
+  val otel4sSdkMetrics = "org.typelevel" %% "otel4s-sdk-contrib-metrics" % V.otel4sSdk
+
+  val otel4sHttp4sCore = "org.http4s" %% "http4s-otel4s-middleware-core" % V.otel4sHttp4s
+  val otel4sHttp4sMetrics = "org.http4s" %% "http4s-otel4s-middleware-metrics" % V.otel4sHttp4s
+
+  val declineCore = "com.monovore" %% "decline" % V.decline
+  val declineCatsEffect = "com.monovore" %% "decline-effect" % V.decline
+
+  val testContainers = "com.dimafeng" %% "testcontainers-scala-core" % "0.44.1" % Test
+  val weaver = "org.typelevel" %% "weaver-cats" % "0.13.0" % Test
+  val weaverScalaCheck = "org.typelevel" %% "weaver-scalacheck" % "0.13.0" % Test
+  val catsEffectTestKit = "org.typelevel" %% "cats-effect-testkit" % V.catsEffect % Test
+  val scalacheck = "org.scalacheck" %% "scalacheck" % "1.17.0" % Test
+  val snapshot4s = "com.siriusxm" %% "snapshot4s-weaver" % snapshot4sVersion % Test

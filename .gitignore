@@ -1,7 +1,17 @@
 # Local/dev artifacts
 PROMPT.md
+HUONG-DAN-KHOI-DONG.md
 
 # Local service distributions (large, not source)
 elasticsearch-*/
 elasticsearch-9.*/
-lila-search/
+
+# lila-search: commit source, ignore build/runtime artifacts
+lila-search/target/
+lila-search/project/target/
+lila-search/project/project/target/
+lila-search/logs/
+lila-search/.bsp/
+lila-search/.idea/
+lila-search/.metals/
+lila-search/.vscode/

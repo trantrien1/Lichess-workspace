@@ -1,0 +1,20 @@
+.bloop/
+.bsp/
+.metals/
+logs
+target
+/project/project
+/.idea
+/.idea_modules
+/.classpath
+/.project
+/.settings
+/.vscode
+/RUNNING_PID
+# docker sbt
+/?
+.sbtopts
+.env
+
+.smithy.lsp.log
+store.json

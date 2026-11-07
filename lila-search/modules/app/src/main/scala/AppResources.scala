@@ -1,0 +1,33 @@
+package lila.search
+package app
+
+import cats.effect.*
+import cats.syntax.all.*
+import org.http4s.client.Client
+import org.http4s.client.middleware.RequestLogger
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.otel4s.middleware.metrics.OtelMetrics
+import org.typelevel.otel4s.metrics.MeterProvider
+
+class AppResources(
+    val esClient: ESClient[IO]
+)
+
+object AppResources:
+
+  def instance(conf: AppConfig)(using MeterProvider[IO]): Resource[IO, AppResources] =
+    makeElasticClient(conf.elastic).map(AppResources.apply)
+
+  private def makeElasticClient(conf: ElasticConfig)(using MeterProvider[IO]): Resource[IO, ESClient[IO]] =
+    val metrics = OtelMetrics
+      .clientMetricsOps[IO]()
+      .map(org.http4s.client.middleware.Metrics[IO](_, _.uri.renderString.some))
+
+    (metrics.toResource, EmberClientBuilder.default[IO].build)
+      .mapN(_.apply(_))
+      .map(elasticClientLoggerMiddeware(conf.enableRequestLogging))
+      .map(ESClient(conf.uri))
+
+  private def elasticClientLoggerMiddeware(enable: Boolean): Client[IO] => Client[IO] =
+    if enable then RequestLogger[IO](true, true)
+    else identity

@@ -689,6 +689,8 @@ Gửi lại cho tôi output của 4 lệnh ở mục 9.1, kèm:
 
 ## 11. Bật advanced search trên local (lila-search + Elasticsearch)
 
+> **Lưu ý:** Bản phân phối Elasticsearch (`elasticsearch-*/`) và `lila-search/` **không được commit vào git** (đã thêm vào `.gitignore`, vì kích thước lớn). Muốn dùng advanced search local, bạn phải **tự cài/tải** Elasticsearch và lila-search theo hướng dẫn bên dưới.
+
 Advanced search của lila **không** đọc trực tiếp Mongo. Nó gọi `lila-search` (cổng 9673), service này
 lại query Elasticsearch (cổng 9200). Local mặc định trong `conf/base.conf`:
 

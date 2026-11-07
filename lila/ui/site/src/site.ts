@@ -34,3 +34,7 @@ loadPolyfills();
 fixBrowserStyle();
 addWindowHandlers();
 site.load.then(boot);
+
+// WebMCP tools (search + analyse). Side-effect import: registers window.__ltw
+// and, when the browser supports the WebMCP preview API, both tools.
+import 'lib/webmcp';

@@ -1,0 +1,7 @@
+# Local/dev artifacts
+PROMPT.md
+
+# Local service distributions (large, not source)
+elasticsearch-*/
+elasticsearch-9.*/
+lila-search/

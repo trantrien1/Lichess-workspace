@@ -1,15 +1,18 @@
 [submodule "lila"]
 	path = lila
-	url = https://github.com/lichess-org/lila.git
+	url = https://github.com/trantrien1/lila.git
 [submodule "scalachess"]
 	path = scalachess
-	url = https://github.com/lichess-org/scalachess.git
+	url = https://github.com/trantrien1/scalachess.git
 [submodule "chessground"]
 	path = chessground
-	url = https://github.com/lichess-org/chessground.git
+	url = https://github.com/trantrien1/chessground.git
 [submodule "lila-ws"]
 	path = lila-ws
-	url = https://github.com/lichess-org/lila-ws.git
+	url = https://github.com/trantrien1/lila-ws.git
 [submodule "fishnet"]
 	path = fishnet
-	url = https://github.com/lichess-org/fishnet.git
+	url = https://github.com/trantrien1/fishnet.git
+[submodule "lila-fishnet"]
+	path = lila-fishnet
+	url = https://github.com/trantrien1/lila-fishnet.git

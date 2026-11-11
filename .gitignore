@@ -1,6 +1,7 @@
 # Local/dev artifacts
 PROMPT.md
 HUONG-DAN-KHOI-DONG.md
+script/
 
 # Local service distributions (large, not source)
 elasticsearch-*/

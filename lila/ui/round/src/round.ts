@@ -43,6 +43,15 @@ async function app(opts: RoundOpts): Promise<RoundController> {
 
   site.sound.preloadBoardSounds();
 
+  window.addEventListener(
+    'pagehide',
+    () => {
+      ctrl.commentary?.destroy();
+    },
+    { once: true },
+  );
+  pubsub.on('socket.close', () => ctrl.commentary?.reset(true));
+
   return ctrl;
 }
 

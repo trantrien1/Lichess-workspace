@@ -1,0 +1,8 @@
+.commentary {
+  grid-area: commentary;
+  min-width: 0;
+
+  &__toggle {
+    width: 100%;
+  }
+}

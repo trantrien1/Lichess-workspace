@@ -169,6 +169,8 @@ final class Env(
 
   val apiMoveStream = wire[ApiMoveStream]
 
+  val commentaryStream = new CommentaryStream(proxyRepo.game)
+
   wire[RoundCourtesy]
 
   // core APIs

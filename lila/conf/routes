@@ -1,6 +1,7 @@
 # Run `./lila.sh playRoutes` after modifying this file
 
 # Lobby
+GET   /commentary/$gameId<\w{8}>       controllers.Commentary.stream(gameId: GameId, voice: String ?= "piper-vais1000")
 GET   /                                controllers.Lobby.home
 GET   /lobby/seeks                     controllers.Lobby.seeks
 

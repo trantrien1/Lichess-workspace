@@ -110,7 +110,7 @@ export default class RoundController implements MoveRootCtrl {
     const d = (this.data = opts.data);
 
     this.ply = util.lastPly(d);
-    if (d.commentary && opts.userId && !d.local && !d.player.spectator)
+    if (d.commentary && !d.local && !d.player.spectator)
       this.commentary = new CommentaryCtrl(
         d.game.id,
         () => ({

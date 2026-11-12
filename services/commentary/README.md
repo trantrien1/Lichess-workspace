@@ -1,6 +1,6 @@
 # Bình luận viên tiếng Việt
 
-Dịch vụ tạo lời bình cho ván cờ tiêu chuẩn giữa người dùng đã đăng nhập và máy. Lila lấy các nước đi, gửi thế cờ tới dịch vụ và phát âm thanh qua giao diện ván đấu. Stockfish phân tích thế cờ; Piper tổng hợp giọng nói. Có thể cấu hình thêm endpoint LLM tương thích OpenAI; nếu không có, dịch vụ dùng lời bình dựng sẵn.
+Dịch vụ tạo lời bình cho các ván cờ tiêu chuẩn: chơi với máy, thách đấu bạn bè và ghép cặp ở sảnh, kể cả ván của khách chưa đăng nhập. Lila lấy các nước đi, gửi thế cờ tới dịch vụ và phát âm thanh qua giao diện ván đấu. Stockfish phân tích thế cờ; Piper tổng hợp giọng nói. Có thể cấu hình thêm endpoint LLM tương thích OpenAI; nếu không có, dịch vụ dùng lời bình dựng sẵn.
 
 ## Chạy dịch vụ
 
@@ -31,4 +31,4 @@ commentary.endpoint = "http://127.0.0.1:9666"
 commentary.token = "<BLV_TOKEN>"
 ```
 
-Khởi động lại Lila và build lại UI theo hướng dẫn của Lila. Tính năng mặc định tắt khi chưa cấu hình. Trên màn hình ván đấu đủ điều kiện, người chơi có thể bật hoặc tắt bình luận.
+Khởi động lại Lila và build lại UI theo hướng dẫn của Lila. Tính năng mặc định tắt khi chưa cấu hình. Trên màn hình ván đấu, mỗi người chơi có thể tự bật hoặc tắt bình luận. Người dùng được xác thực bằng tài khoản; khách dùng cookie người chơi sẵn có của Lila. Người xem không có quyền mở luồng bình luận.

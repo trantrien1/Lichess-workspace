@@ -1,0 +1,108 @@
+name: lichess-wdl
+services:
+  mongodb:
+    image: mongo:7.0.28-jammy@sha256:88785f6f665ab817955ec1cb4f05b7b9c76947023086401413085cd1fff091a4
+    command: [mongod, --bind_ip_all, --replSet, rs0]
+    volumes:
+      - mongo-data:/data/db
+      - ./lila-docker/scripts:/scripts:ro
+      - ./lila-docker/repos/lila:/lila:ro
+    healthcheck:
+      test: [CMD, mongosh, --quiet, /scripts/replica-set.js]
+      interval: 5s
+      timeout: 20s
+      retries: 30
+  mongodb_secondary:
+    image: mongo:7.0.28-jammy@sha256:88785f6f665ab817955ec1cb4f05b7b9c76947023086401413085cd1fff091a4
+    command: [mongod, --bind_ip_all, --replSet, rs0]
+    volumes: [mongo-secondary-data:/data/db]
+  redis:
+    image: redis:8.0.3-alpine3.21@sha256:25c0ae32c6c2301798579f5944af53729766a18eff5660bbef196fc2e6214a9c
+  lila_ws:
+    image: ghcr.io/lichess-org/lila-ws@sha256:e3286988fffabf0e33eba0108647613d56ce810d29b97b71d6004eaf9f3c594d
+    environment:
+      CONFIG_FORCE_csrf.origin: http://localhost:8080
+      CONFIG_FORCE_kamon.enabled: "false"
+      CONFIG_FORCE_mongo_uri: mongodb://mongodb:27017/lichess?appName=lila-ws
+      CONFIG_FORCE_redis.uri: redis://redis
+    depends_on:
+      mongodb: {condition: service_healthy}
+      redis: {condition: service_started}
+  lila:
+    build:
+      context: ./docker
+      dockerfile: sbt.Dockerfile
+      args: {USER_ID: "0", GROUP_ID: "0"}
+    working_dir: /lila
+    command:
+      - java
+      - -Xms128m
+      - -Xmx1g
+      - --enable-native-access=ALL-UNNAMED
+      - -Dreactivemongo.api.bson.document.strict=false
+      - -Dconfig.file=/lila/conf/application.conf
+      - -Dlogger.file=/lila/conf/logger.dev.xml
+      - -Dplay.server.dir=/lila
+      - -cp
+      - /lila/target/universal/stage/lib/*
+      - lila.app.Lila
+    stop_grace_period: 30s
+    environment:
+      LILA_DOMAIN: localhost:8080
+      LILA_URL: http://localhost:8080
+      WIN_PROBABILITY_ENABLED: "true"
+      WIN_PROBABILITY_URL: http://prediction:8000
+    volumes:
+      - ./lila-docker/repos/lila:/lila
+      - ./lila.conf:/lila/conf/application.conf:ro
+      - sbt-cache:/root/.sbt
+      - sbt-task-cache:/root/.cache/sbt
+      - ivy-cache:/root/.ivy2
+      - coursier-cache:/root/.cache/coursier
+    depends_on:
+      mongodb: {condition: service_healthy}
+      redis: {condition: service_started}
+  ui:
+    build:
+      context: ./docker
+      dockerfile: ui.Dockerfile
+      args: {USER_ID: "0", GROUP_ID: "0"}
+    working_dir: /lila
+    command: [bash, ./ui/build, --debug]
+    environment: {CI: "1"}
+    volumes:
+      - ./lila-docker/repos/lila:/lila
+      - pnpm-store:/.pnpm-store
+      - corepack-cache:/root/.cache/node/corepack
+    profiles: [tools]
+  caddy:
+    image: caddy:2.10.2-alpine@sha256:4c6e91c6ed0e2fa03efd5b44747b625fec79bc9cd06ac5235a779726618e530d
+    ports: ["127.0.0.1:8080:80"]
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on: [lila, lila_ws]
+  prediction:
+    build: ../services/prediction
+    environment:
+      STOCKFISH_PATH: /usr/games/stockfish
+      ENGINE_WORKERS: "2"
+      ENGINE_TIME_MS: "250"
+      ENGINE_THREADS: "1"
+      ENGINE_HASH_MB: "64"
+    cpus: 2
+    mem_limit: 512m
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    profiles: [prediction]
+volumes:
+  mongo-data:
+  mongo-secondary-data:
+  sbt-cache:
+  sbt-task-cache:
+  ivy-cache:
+  coursier-cache:
+  pnpm-store:
+  corepack-cache:

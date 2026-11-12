@@ -1,0 +1,104 @@
+[
+  {
+    "games": 8000,
+    "positions": 37997,
+    "game_labels_white_draw_black": [
+      4019,
+      254,
+      3727
+    ],
+    "first_game_at": "2026-08-01T00:00:01+00:00",
+    "last_game_at": "2026-08-01T01:29:36+00:00",
+    "compressed_bytes": 39977875,
+    "compressed_prefix_sha256": "251396a4c5eedc33b6bc9ea431a8337c934285ad5bab252fe7612cdb61cd71f8",
+    "dataset_sha256": "d15595804dba27a2058b7581b75832b19ae05141709928beb3f2e0662b3db069",
+    "source": "https://database.lichess.org/standard/lichess_db_standard_rated_2026-08.pgn.zst",
+    "license": "CC0-1.0",
+    "source_documentation": "https://database.lichess.org/#standard_games",
+    "retrieved_at": "2026-11-05T05:44:05.972357+00:00",
+    "month": "2026-08",
+    "sampling": "archive prefix; analyzed rated human blitz/rapid; fixed plies",
+    "selected_plies": [
+      4,
+      13,
+      24,
+      41,
+      60,
+      81,
+      100,
+      139
+    ],
+    "extractor_version": "human-pgn-v2",
+    "game_limit": 8000,
+    "byte_limit": 134217728,
+    "etag": "\"6aa282bd-704d55ad7\""
+  },
+  {
+    "games": 2000,
+    "positions": 9412,
+    "game_labels_white_draw_black": [
+      1009,
+      63,
+      928
+    ],
+    "first_game_at": "2026-09-01T00:00:00+00:00",
+    "last_game_at": "2026-09-01T00:19:31+00:00",
+    "compressed_bytes": 8257725,
+    "compressed_prefix_sha256": "739b2a49115d3ae672989e9a693e03aaaf6c08f3cd18ff130d283b3d6f1f1be2",
+    "dataset_sha256": "02d9408ef55a8a02fc770afef627621c10c96d692fc8923da2ec418d3995cd4f",
+    "source": "https://database.lichess.org/standard/lichess_db_standard_rated_2026-09.pgn.zst",
+    "license": "CC0-1.0",
+    "source_documentation": "https://database.lichess.org/#standard_games",
+    "retrieved_at": "2026-11-05T05:44:15.964395+00:00",
+    "month": "2026-09",
+    "sampling": "archive prefix; analyzed rated human blitz/rapid; fixed plies",
+    "selected_plies": [
+      4,
+      13,
+      24,
+      41,
+      60,
+      81,
+      100,
+      139
+    ],
+    "extractor_version": "human-pgn-v2",
+    "game_limit": 2000,
+    "byte_limit": 67108864,
+    "etag": "\"6ac08d73-6cdeaccb7\""
+  },
+  {
+    "games": 2000,
+    "positions": 9341,
+    "game_labels_white_draw_black": [
+      970,
+      61,
+      969
+    ],
+    "first_game_at": "2026-10-01T00:00:01+00:00",
+    "last_game_at": "2026-10-01T00:19:59+00:00",
+    "compressed_bytes": 8257725,
+    "compressed_prefix_sha256": "12827848f305e0acd3ed26995390a59185af2d4cac2aeb3c4e8949f0137c80f9",
+    "dataset_sha256": "927308f880c3aa07dc16a08339a3e1509027c574743ea87befd3a8fa469d2ff4",
+    "source": "https://database.lichess.org/standard/lichess_db_standard_rated_2026-10.pgn.zst",
+    "license": "CC0-1.0",
+    "source_documentation": "https://database.lichess.org/#standard_games",
+    "retrieved_at": "2026-11-05T05:44:25.393941+00:00",
+    "month": "2026-10",
+    "sampling": "archive prefix; analyzed rated human blitz/rapid; fixed plies",
+    "selected_plies": [
+      4,
+      13,
+      24,
+      41,
+      60,
+      81,
+      100,
+      139
+    ],
+    "extractor_version": "human-pgn-v2",
+    "game_limit": 2000,
+    "byte_limit": 67108864,
+    "etag": "\"6ae7e5fa-736b0bea9\""
+  }
+]

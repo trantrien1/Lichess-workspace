@@ -33,6 +33,7 @@ import * as wakeLock from 'lib/wakeLock';
 import * as atomic from './atomic';
 import * as blur from './blur';
 import * as cevalSub from './cevalSub';
+import { CommentaryCtrl } from './commentary';
 import { CorresClockController } from './corresClock/corresClockCtrl';
 import { valid as crazyValid, init as crazyInit, onEnd as crazyEndHook } from './crazy/crazyCtrl';
 import * as ground from './ground';
@@ -70,6 +71,7 @@ export default class RoundController implements MoveRootCtrl {
   corresClock?: CorresClockController;
   keyboardMove?: KeyboardMove;
   voiceMove?: VoiceMove;
+  commentary?: CommentaryCtrl;
   moveOn: MoveOn;
   promotion: PromotionCtrl;
   ply: number;
@@ -108,6 +110,17 @@ export default class RoundController implements MoveRootCtrl {
     const d = (this.data = opts.data);
 
     this.ply = util.lastPly(d);
+    if (d.commentary && opts.userId && !d.local && !d.player.spectator)
+      this.commentary = new CommentaryCtrl(
+        d.game.id,
+        () => ({
+          ply: this.ply,
+          fen: this.stepAt(this.ply).fen,
+          status: this.data.game.status.name,
+          live: !this.replaying(),
+        }),
+        redraw,
+      );
     this.goneBerserk[d.player.color] = d.player.berserk;
     this.goneBerserk[d.opponent.color] = d.opponent.berserk;
     setTimeout(() => {
@@ -253,8 +266,10 @@ export default class RoundController implements MoveRootCtrl {
 
   jump = (ply: Ply): boolean => {
     ply = Math.max(util.firstPly(this.data), Math.min(this.lastPly(), ply));
+    const commentaryChanged = ply !== this.ply;
     const isForwardStep = ply === this.ply + 1;
     this.ply = ply;
+    if (commentaryChanged) this.commentary?.seek();
     this.justDropped = undefined;
     this.preDrop = undefined;
     const s = this.stepAt(ply);
@@ -329,6 +344,7 @@ export default class RoundController implements MoveRootCtrl {
         }
       }
     }
+    this.commentary?.positionChanged();
     this.socket.send(tpe, data, socketOpts);
 
     this.justDropped = meta.justDropped;
@@ -410,6 +426,7 @@ export default class RoundController implements MoveRootCtrl {
   playerByColor = (c: Color): game.Player => this.data[c === this.data.player.color ? 'player' : 'opponent'];
 
   apiMove = (o: ApiMove): true => {
+    this.commentary?.positionChanged(o.ply);
     const d = this.data;
     const playing = this.isPlaying();
     d.game.turns = o.ply;
@@ -522,7 +539,7 @@ export default class RoundController implements MoveRootCtrl {
     this.onChange();
     this.pluginUpdate(step.fen);
     if (!this.data.local) site.sound.move({ ...o, filter: 'music' });
-    site.sound.saySan(step.san);
+    if (!this.commentary?.enabled) site.sound.saySan(step.san);
     this.server.alive();
     return true; // prevents default socket pubsub
   };
@@ -544,6 +561,9 @@ export default class RoundController implements MoveRootCtrl {
   }
 
   reload = (d: RoundData): void => {
+    const rewound =
+      d.steps.length <= this.data.steps.length && util.lastStep(d).fen !== util.lastStep(this.data).fen;
+    this.commentary?.reset(!rewound);
     const posChanged = d.steps.length !== this.data.steps.length;
     if (posChanged) this.ply = util.lastPly(d);
     util.upgradeServerData(d);
@@ -571,6 +591,7 @@ export default class RoundController implements MoveRootCtrl {
   };
 
   endWithData = (o: ApiEnd): void => {
+    this.commentary?.positionChanged(this.lastPly());
     const d = this.data;
     const ply = this.lastPly();
     const step = this.stepAt(ply);

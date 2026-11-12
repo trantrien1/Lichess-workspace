@@ -117,6 +117,7 @@ final class LilaComponents(
   lazy val playApi: PlayApi = wire[PlayApi]
   lazy val challenge: Challenge = wire[Challenge]
   lazy val coach: Coach = wire[Coach]
+  lazy val commentary: Commentary = wire[Commentary]
   lazy val clasC: clas.Clas = wire[clas.Clas]
   lazy val coordinate: Coordinate = wire[Coordinate]
   lazy val dasher: Dasher = wire[Dasher]

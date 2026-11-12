@@ -1,0 +1,21 @@
+{
+  "qwen2.5-1.5b-instruct-q4_k_m.gguf": {
+    "url": "https://huggingface.co/Qwen/Qwen2.5-1.5B-Instruct-GGUF/resolve/91cad51170dc346986eccefdc2dd33a9da36ead9/qwen2.5-1.5b-instruct-q4_k_m.gguf",
+    "sha256": "6a1a2eb6d15622bf3c96857206351ba97e1af16c30d7a74ee38970e434e9407e",
+    "license": "Apache-2.0"
+  },
+  "vi_VN-vais1000-medium.onnx": {
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/e7229f7d33a10e145e109b886d661984201ac3c4/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx",
+    "sha256": "ec7c89e2c85f4d1edc24b6120c18aaf1bda614f06b511567eb9c7c0de15e2dab",
+    "license": "Dataset: CC-BY-4.0; see MODEL_CARD"
+  },
+  "vi_VN-vais1000-medium.onnx.json": {
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/e7229f7d33a10e145e109b886d661984201ac3c4/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json",
+    "sha256": "fafb9da1354ed4b77c31af228ed41fb41cd825c14cffa105454b25e6ae751ee0"
+  },
+  "llama.tar.gz": {
+    "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12069/llama-b12069-bin-ubuntu-x64.tar.gz",
+    "sha256": "70df3ef8becd405b9ebc13b925387715ae7dccb0f034fd5f46a4034b350130a1",
+    "license": "MIT"
+  }
+}

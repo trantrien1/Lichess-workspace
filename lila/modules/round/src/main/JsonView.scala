@@ -25,7 +25,8 @@ final class JsonView(
     takebacker: Takebacker,
     moretimer: Moretimer,
     divider: lila.game.Divider,
-    isOfferingRematch: lila.core.round.IsOfferingRematch
+    isOfferingRematch: lila.core.round.IsOfferingRematch,
+    appConfig: play.api.Configuration
 )(using Executor):
 
   import lila.tree.ExportOptions
@@ -74,6 +75,8 @@ final class JsonView(
     import pov.*
     Json
       .obj(
+        "commentary" -> (appConfig.getOptional[Boolean]("commentary.enabled").getOrElse(false) &&
+          game.hasAi && game.variant == chess.variant.Standard && player.hasUser),
         "game" -> gameJsonView.baseWithChessDenorm(game, initialFen),
         "player" -> {
           commonPlayerJson(game, player, users(pov.color), flags) ++ Json

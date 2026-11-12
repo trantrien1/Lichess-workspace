@@ -53,6 +53,8 @@ object account:
   val twoFactor = lila.pref.ui.TwoFactorUi(helpers, ui)(netConfig.domain)
   val security = lila.security.ui.AccountSecurity(helpers)(ui.AccountPage)
 
+val dailyGoal = lila.dailyGoal.ui.DailyGoalUi(helpers)(account.ui.AccountPage)
+
 val practice = lila.practice.ui.PracticeUi(helpers)(
   csp = analyse.ui.bits.cspExternalEngine,
   views.analyse.ui.explorerAndCevalConfig

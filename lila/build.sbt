@@ -92,7 +92,7 @@ lazy val modules = Seq(
   setup, video, fide, title, push,
   // and then the smaller ones
   pool, lobby, relation, tv, coordinate, feed, history, recap,
-  shutup, appeal, irc, explorer, learn, event, coach,
+  shutup, appeal, irc, explorer, learn, event, coach, dailyGoal,
   practice, evalCache, irwin, bot, racer, cms, i18n, jsBot,
   socket, bookmark, studySearch, gameSearch, forumSearch, teamSearch, irc
 )
@@ -296,6 +296,11 @@ lazy val pool = module("pool",
 )
 
 lazy val activity = module("activity",
+  Seq(puzzle),
+  tests.bundle
+)
+
+lazy val dailyGoal = module("dailyGoal",
   Seq(puzzle),
   tests.bundle
 )

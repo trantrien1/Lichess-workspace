@@ -854,6 +854,9 @@ GET   /account/username                controllers.Account.username
 POST  /account/username                controllers.Account.usernameApply
 GET   /account/kid                     controllers.Account.kid
 POST  /account/kid                     controllers.Account.kidPost
+GET   /account/daily-goal              controllers.DailyGoal.index
+POST  /account/daily-goal              controllers.DailyGoal.save
+POST  /account/daily-goal/off          controllers.DailyGoal.disable
 GET   /account/twofactor               controllers.Account.twoFactor
 POST  /account/twofactor/setup         controllers.Account.setupTwoFactor
 POST  /account/twofactor/disable       controllers.Account.disableTwoFactor

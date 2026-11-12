@@ -60,6 +60,7 @@ object home:
           )
         )(
           div(cls := "lobby__side")(
+            (ctx.isAuth && ctx.noBot).option(views.dailyGoal.home(dailyGoal)),
             ctx.blind.option(h2(trans.nvui.featuredEvents())),
             ctx.kid.no.option(views.streamer.bits.liveStreams(streams)),
             div(cls := "lobby__spotlights"):

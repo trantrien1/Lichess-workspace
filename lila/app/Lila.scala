@@ -171,6 +171,7 @@ final class LilaComponents(
   lazy val video: Video = wire[Video]
   lazy val swiss: Swiss = wire[Swiss]
   lazy val dgt: DgtCtrl = wire[DgtCtrl]
+  lazy val dailyGoal: DailyGoal = wire[DailyGoal]
   lazy val storm: Storm = wire[Storm]
   lazy val racer: Racer = wire[Racer]
   lazy val ublog: Ublog = wire[Ublog]

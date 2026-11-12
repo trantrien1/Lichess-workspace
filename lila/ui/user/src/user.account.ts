@@ -15,6 +15,13 @@ site.load.then(() => {
     createSelectSearch(this);
   });
 
+  $('.daily-goal #form3-zone').each(function (this: HTMLSelectElement) {
+    // a new daily goal starts in the browser's time zone
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (this.closest('.daily-goal--new') && [...this.options].some(o => o.value === zone)) this.value = zone;
+    createSelectSearch(this);
+  });
+
   addPasswordVisibilityToggleListener();
 
   const localPrefs: [string, string, string, boolean][] = [

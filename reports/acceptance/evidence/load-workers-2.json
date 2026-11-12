@@ -1,0 +1,52 @@
+{
+  "workers": 2,
+  "search_ms": 250,
+  "threads_per_engine": 1,
+  "model_id": "human-logit-v1-54213e4fef50",
+  "conditions": "isolated worker; engines warmed; four positions; 100 requests in 20 threads; 50ms unique-game polling",
+  "games": 4,
+  "spectators": 100,
+  "game_ready_latency_ms": [
+    303.2,
+    363.7,
+    585.3,
+    587.1
+  ],
+  "game_ready_p95_ms": 587.1,
+  "engine_evaluations": 4,
+  "extra_evaluations_for_cached_requests": 0,
+  "saturation_games": 96,
+  "busy_responses": 30,
+  "queue_at_saturation": {
+    "status": "ok",
+    "pending": 62,
+    "active": 2,
+    "cached": 8,
+    "completed": 8,
+    "cache_hits": 104,
+    "superseded": 0,
+    "errors": 0,
+    "human_model": {
+      "loaded": true,
+      "model_id": "human-logit-v1-54213e4fef50",
+      "errors": 0
+    }
+  },
+  "official_aborts": 96,
+  "final": {
+    "status": "ok",
+    "pending": 0,
+    "active": 0,
+    "cached": 8,
+    "completed": 8,
+    "cache_hits": 104,
+    "superseded": 0,
+    "errors": 0,
+    "human_model": {
+      "loaded": true,
+      "model_id": "human-logit-v1-54213e4fef50",
+      "errors": 0
+    }
+  },
+  "limitations": "One burst per configuration; not a long-running capacity or gameplay benchmark"
+}

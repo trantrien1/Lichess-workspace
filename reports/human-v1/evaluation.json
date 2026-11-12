@@ -1,0 +1,452 @@
+{
+  "model_id": "human-logit-v1-54213e4fef50",
+  "accepted_for_pilot": true,
+  "gates": {
+    "sample_size": true,
+    "test_class_support": true,
+    "log_loss_beats_baselines": true,
+    "brier_beats_baselines": true,
+    "improvement_ci": true,
+    "top_label_ece": true
+  },
+  "test_games": 2000,
+  "test_positions": 9341,
+  "test_game_labels_white_draw_black": [
+    970,
+    61,
+    969
+  ],
+  "metrics": {
+    "human": {
+      "log_loss": 0.7122184481248268,
+      "brier": 0.4550699365431017,
+      "top_label_ece": 0.021898853791539004
+    },
+    "uncalibrated": {
+      "log_loss": 0.7121423876174153,
+      "brier": 0.45500376394929604,
+      "top_label_ece": 0.02133729915324544
+    },
+    "frequency": {
+      "log_loss": 0.8091783674124017,
+      "brier": 0.5297548437499999,
+      "top_label_ece": 0.017374999999969044
+    },
+    "rating_only": {
+      "log_loss": 0.8277745316379647,
+      "brier": 0.5355234155864117,
+      "top_label_ece": 0.06143598689724178
+    },
+    "score_wdl_sf15.1": {
+      "log_loss": 6.974149040834399,
+      "brier": 1.1786445921083333,
+      "top_label_ece": 0.587608831547619
+    }
+  },
+  "paired_log_loss_deltas": {
+    "frequency": {
+      "mean": -0.09695991928757484,
+      "ci95": [
+        -0.10716542368905023,
+        -0.0863207606004014
+      ],
+      "unit": "game",
+      "resamples": 500
+    },
+    "rating_only": {
+      "mean": -0.11555608351313783,
+      "ci95": [
+        -0.13399006161166405,
+        -0.09862265169857526
+      ],
+      "unit": "game",
+      "resamples": 500
+    },
+    "score_wdl_sf15.1": {
+      "mean": -6.261930592709572,
+      "ci95": [
+        -6.526734013815632,
+        -6.022776741092534
+      ],
+      "unit": "game",
+      "resamples": 500
+    }
+  },
+  "slices": {
+    "blitz": {
+      "games": 1221,
+      "positions": 5811,
+      "scores": {
+        "human": {
+          "log_loss": 0.7011800955276069,
+          "brier": 0.4524542974093479,
+          "top_label_ece": 0.020881572304255247
+        },
+        "uncalibrated": {
+          "log_loss": 0.7011644246404806,
+          "brier": 0.4523933468118056,
+          "top_label_ece": 0.020056268020071478
+        },
+        "frequency": {
+          "log_loss": 0.7952762619683302,
+          "brier": 0.5251489394707209,
+          "top_label_ece": 0.015069512694481743
+        },
+        "rating_only": {
+          "log_loss": 0.8368302962572766,
+          "brier": 0.5461771649074378,
+          "top_label_ece": 0.06444276577246669
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 7.0337191842292,
+          "brier": 1.1912468820170818,
+          "top_label_ece": 0.5928456212706212
+        }
+      }
+    },
+    "rapid": {
+      "games": 779,
+      "positions": 3530,
+      "scores": {
+        "human": {
+          "log_loss": 0.7295198968041665,
+          "brier": 0.45916967387598157,
+          "top_label_ece": 0.0275100468589293
+        },
+        "uncalibrated": {
+          "log_loss": 0.7293491819625212,
+          "brier": 0.4590953163560685,
+          "top_label_ece": 0.026452255550358406
+        },
+        "frequency": {
+          "log_loss": 0.8309684453934172,
+          "brier": 0.5369741109194476,
+          "top_label_ece": 0.020988607188672515
+        },
+        "rating_only": {
+          "log_loss": 0.8135805796480031,
+          "brier": 0.5188247918110934,
+          "top_label_ece": 0.05993133182618714
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 6.880779149839466,
+          "brier": 1.1588918373219634,
+          "top_label_ece": 0.5794007182590623
+        }
+      }
+    },
+    "rating_600_1399": {
+      "games": 720,
+      "positions": 3224,
+      "scores": {
+        "human": {
+          "log_loss": 0.6669749678700485,
+          "brier": 0.43654508335799025,
+          "top_label_ece": 0.020685424604515175
+        },
+        "uncalibrated": {
+          "log_loss": 0.6670742532771697,
+          "brier": 0.43650822278150214,
+          "top_label_ece": 0.020401091640555126
+        },
+        "frequency": {
+          "log_loss": 0.7714140668427711,
+          "brier": 0.5171559965277784,
+          "top_label_ece": 0.009319444444413487
+        },
+        "rating_only": {
+          "log_loss": 0.7714757487293998,
+          "brier": 0.509410168740291,
+          "top_label_ece": 0.05282618260415109
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 7.2985030292917665,
+          "brier": 1.115468098726852,
+          "top_label_ece": 0.5555005952380953
+        }
+      }
+    },
+    "rating_1400_1799": {
+      "games": 711,
+      "positions": 3267,
+      "scores": {
+        "human": {
+          "log_loss": 0.7143684290683444,
+          "brier": 0.4562222335844119,
+          "top_label_ece": 0.015608923413889666
+        },
+        "uncalibrated": {
+          "log_loss": 0.7143161677942212,
+          "brier": 0.4561753089570111,
+          "top_label_ece": 0.014562193937021212
+        },
+        "frequency": {
+          "log_loss": 0.8061468150465767,
+          "brier": 0.5284901034194797,
+          "top_label_ece": 0.011517053445819962
+        },
+        "rating_only": {
+          "log_loss": 0.8320315489877546,
+          "brier": 0.5412751574234174,
+          "top_label_ece": 0.08468876940068548
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 6.758054772969432,
+          "brier": 1.19830521615431,
+          "top_label_ece": 0.5978129311499565
+        }
+      }
+    },
+    "rating_1800_2199": {
+      "games": 442,
+      "positions": 2177,
+      "scores": {
+        "human": {
+          "log_loss": 0.7772073548431144,
+          "brier": 0.4840334209702976,
+          "top_label_ece": 0.051005235420830256
+        },
+        "uncalibrated": {
+          "log_loss": 0.7768168985435561,
+          "brier": 0.48388422639235373,
+          "top_label_ece": 0.04947273356076856
+        },
+        "frequency": {
+          "log_loss": 0.8696480954985581,
+          "brier": 0.5509921327771478,
+          "top_label_ece": 0.05214875565607764
+        },
+        "rating_only": {
+          "log_loss": 0.9221605763625282,
+          "brier": 0.5782165105225751,
+          "top_label_ece": 0.07968017688084249
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 6.899861192566062,
+          "brier": 1.231817604260935,
+          "top_label_ece": 0.6151573071536308
+        }
+      }
+    },
+    "rating_2200_3000": {
+      "games": 127,
+      "positions": 673,
+      "scores": {
+        "human": {
+          "log_loss": 0.730498547047002,
+          "brier": 0.4528396292997014,
+          "top_label_ece": 0.03481158183032527
+        },
+        "uncalibrated": {
+          "log_loss": 0.7303893576167362,
+          "brier": 0.45278846269334844,
+          "top_label_ece": 0.03682986532728288
+        },
+        "frequency": {
+          "log_loss": 0.8297934093663738,
+          "brier": 0.5343494785925197,
+          "top_label_ece": 0.025184055118141188
+        },
+        "rating_only": {
+          "log_loss": 0.7946229772301616,
+          "brier": 0.5027809063054007,
+          "top_label_ece": 0.05745765672516227
+        },
+        "score_wdl_sf15.1": {
+          "log_loss": 6.603624487269775,
+          "brier": 1.241683176096738,
+          "top_label_ece": 0.6166355174353207
+        }
+      }
+    }
+  },
+  "reliability": {
+    "white": [
+      {
+        "predicted": 0.050529638382984694,
+        "observed": 0.030511623978546846,
+        "positions": 305,
+        "game_weight": 56.37976190476191
+      },
+      {
+        "predicted": 0.1578225152115956,
+        "observed": 0.132983204112156,
+        "positions": 692,
+        "game_weight": 138.49761904761903
+      },
+      {
+        "predicted": 0.2470901727114491,
+        "observed": 0.2846602034481112,
+        "positions": 715,
+        "game_weight": 149.56428571428572
+      },
+      {
+        "predicted": 0.3544428959015066,
+        "observed": 0.38668903042528924,
+        "positions": 738,
+        "game_weight": 157.56785714285712
+      },
+      {
+        "predicted": 0.46371735770131783,
+        "observed": 0.4429074667340183,
+        "positions": 2008,
+        "game_weight": 447.7797619047619
+      },
+      {
+        "predicted": 0.5397988505292954,
+        "observed": 0.5140207998065134,
+        "positions": 2306,
+        "game_weight": 511.9095238095238
+      },
+      {
+        "predicted": 0.6457889338216265,
+        "observed": 0.5990236131142397,
+        "positions": 912,
+        "game_weight": 197.27738095238095
+      },
+      {
+        "predicted": 0.7498615530680578,
+        "observed": 0.6991577613396082,
+        "positions": 801,
+        "game_weight": 167.2130952380952
+      },
+      {
+        "predicted": 0.8415923763768675,
+        "observed": 0.8396477517272622,
+        "positions": 615,
+        "game_weight": 126.12857142857143
+      },
+      {
+        "predicted": 0.9378117003968336,
+        "observed": 0.9209797018949892,
+        "positions": 249,
+        "game_weight": 47.68214285714285
+      }
+    ],
+    "draw": [
+      {
+        "predicted": 0.024318245260209637,
+        "observed": 0.026095906627884295,
+        "positions": 8963,
+        "game_weight": 1940.8261904761905
+      },
+      {
+        "predicted": 0.13342763077701633,
+        "observed": 0.11542749838624494,
+        "positions": 250,
+        "game_weight": 40.57380952380952
+      },
+      {
+        "predicted": 0.24096791433518355,
+        "observed": 0.18833442766469685,
+        "positions": 72,
+        "game_weight": 10.878571428571428
+      },
+      {
+        "predicted": 0.3443790020242699,
+        "observed": 0.2902861445783133,
+        "positions": 22,
+        "game_weight": 3.1619047619047618
+      },
+      {
+        "predicted": 0.4429469255316958,
+        "observed": 0.4713375796178344,
+        "positions": 21,
+        "game_weight": 2.8035714285714284
+      },
+      {
+        "predicted": 0.5475538739738701,
+        "observed": 0.6818181818181819,
+        "positions": 6,
+        "game_weight": 0.7857142857142856
+      },
+      {
+        "predicted": 0.6283737258633898,
+        "observed": 1.0,
+        "positions": 4,
+        "game_weight": 0.5773809523809523
+      },
+      {
+        "predicted": 0.724752455045392,
+        "observed": 0.0,
+        "positions": 1,
+        "game_weight": 0.125
+      },
+      {
+        "predicted": 0.8147827335185233,
+        "observed": 1.0,
+        "positions": 1,
+        "game_weight": 0.14285714285714285
+      },
+      {
+        "predicted": 0.9328088329016556,
+        "observed": 1.0,
+        "positions": 1,
+        "game_weight": 0.125
+      }
+    ],
+    "black": [
+      {
+        "predicted": 0.05545029390119286,
+        "observed": 0.05227903937265153,
+        "positions": 353,
+        "game_weight": 65.58214285714286
+      },
+      {
+        "predicted": 0.1558336259909129,
+        "observed": 0.1557713001645778,
+        "positions": 748,
+        "game_weight": 150.45714285714286
+      },
+      {
+        "predicted": 0.250652547969132,
+        "observed": 0.30388820554872215,
+        "positions": 830,
+        "game_weight": 174.21428571428572
+      },
+      {
+        "predicted": 0.3560103451007502,
+        "observed": 0.4142001028435768,
+        "positions": 1155,
+        "game_weight": 247.71785714285716
+      },
+      {
+        "predicted": 0.4563338826449883,
+        "observed": 0.480832712866705,
+        "positions": 2858,
+        "game_weight": 637.9607142857144
+      },
+      {
+        "predicted": 0.5376735704899858,
+        "observed": 0.5336171700906,
+        "positions": 1318,
+        "game_weight": 292.75714285714287
+      },
+      {
+        "predicted": 0.6501782591856398,
+        "observed": 0.6122262262636071,
+        "positions": 592,
+        "game_weight": 127.51666666666665
+      },
+      {
+        "predicted": 0.7538782852380034,
+        "observed": 0.7390834816673991,
+        "positions": 763,
+        "game_weight": 159.84404761904761
+      },
+      {
+        "predicted": 0.8407392405059478,
+        "observed": 0.856348095629142,
+        "positions": 511,
+        "game_weight": 102.92738095238096
+      },
+      {
+        "predicted": 0.9450275028916787,
+        "observed": 0.9571955077048087,
+        "positions": 213,
+        "game_weight": 41.022619047619045
+      }
+    ]
+  },
+  "weighting": "equal per game; Brier is sum of squared errors over three classes (range 0..2)"
+}

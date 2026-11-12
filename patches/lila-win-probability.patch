@@ -1,0 +1,797 @@
+diff --git a/app/Env.scala b/app/Env.scala
+index 7150974..530f711 100644
+--- a/app/Env.scala
++++ b/app/Env.scala
+@@ -58,6 +58,7 @@ final class Env(
+   val history: lila.history.Env = wire[lila.history.Env]
+   val bookmark: lila.bookmark.Env = wire[lila.bookmark.Env]
+   val round: lila.round.Env = wire[lila.round.Env]
++  val winProbability = new http.WinProbability(config, summon[StandaloneWSClient], memo.cacheApi)
+   val search: lila.search.Env = wire[lila.search.Env]
+   val gameSearch: lila.gameSearch.Env = wire[lila.gameSearch.Env]
+   val perfStat: lila.perfStat.Env = wire[lila.perfStat.Env]
+diff --git a/app/controllers/Round.scala b/app/controllers/Round.scala
+index 77f8cc0..9df9356 100644
+--- a/app/controllers/Round.scala
++++ b/app/controllers/Round.scala
+@@ -110,6 +110,17 @@ final class Round(
+           watch(if getUserStr("pov").map(_.id).exists(pov.opponent.userId.has) then !pov else pov)
+         case None => challengeC.showId(gameId.into(lila.challenge.ChallengeId))
+ 
++  def winProbability(gameId: GameId) = Open:
++    if !env.winProbability.enabled then notFound
++    else
++      Found(env.round.proxyRepo.game(gameId)): game =>
++        if !game.variant.standard then notFound
++        else if playablePovForReq(game).isDefined then fuccess(Forbidden)
++        else
++          isBlockedByPlayer(game).flatMap:
++            if _ then notFound
++            else env.winProbability(game).map(data => Ok(data).noCache)
++
+   def watcherRedirect(gameId: GameId, color: Color) = Anon:
+     MovedPermanently(routes.Round.watcher(gameId, color))
+ 
+@@ -148,7 +159,9 @@ final class Round(
+                       page <- renderPage:
+                         views.round.watcher(
+                           pov,
+-                          data,
++                          data.add(
++                            "winProbability" -> (env.winProbability.enabled && pov.game.variant.standard)
++                          ),
+                           tour.map(_.tourAndTeamVs),
+                           simul,
+                           crosstable,
+diff --git a/app/http/WinProbability.scala b/app/http/WinProbability.scala
+new file mode 100644
+index 0000000..5ad7a23
+--- /dev/null
++++ b/app/http/WinProbability.scala
+@@ -0,0 +1,68 @@
++package lila.app
++package http
++
++import play.api.Configuration
++import play.api.libs.json.*
++import play.api.libs.ws.StandaloneWSClient
++import play.api.libs.ws.JsonBodyWritables.*
++
++import lila.common.Json.given
++
++/** Demand-driven WDL for spectators. The game and its SAN history always come from Lila. */
++final class WinProbability(config: Configuration, ws: StandaloneWSClient, cacheApi: lila.memo.CacheApi)(using
++    Executor
++):
++  val enabled = config.getOptional[Boolean]("winProbability.enabled").getOrElse(false)
++  private val endpoint = config.getOptional[String]("winProbability.url").getOrElse("http://prediction:8000")
++
++  // Coalesce spectator HTTP requests as well as engine jobs; keep the number of entries bounded.
++  private val cache = cacheApi.notLoading[(GameId, String), JsObject](64, "winProbability"):
++    _.maximumSize(1024).expireAfterWrite(150.millis).buildAsync()
++
++  def apply(game: GameModel): Fu[JsObject] =
++    val revision =
++      s"${game.id.value}|${game.sans.map(_.value).mkString(" ")}|${game.status.id}|${game.winnerColor.fold("")(_.name)}"
++    val identity = Json.obj("game_id" -> game.id.value, "revision" -> revision)
++    if game.aborted then fuccess(identity ++ Json.obj("status" -> "aborted", "source" -> "official"))
++    else if game.finished then
++      fuccess(
++        identity ++ Json.obj(
++          "status" -> "finished",
++          "source" -> "official",
++          "probabilities" -> Json.obj(
++            "white" -> (if game.winnerColor.contains(Color.white) then 1 else 0),
++            "draw" -> (if game.winnerColor.isEmpty then 1 else 0),
++            "black" -> (if game.winnerColor.contains(Color.black) then 1 else 0)
++          )
++        )
++      )
++    else
++      cache.getFuture(
++        (game.id, revision),
++        _ =>
++          ws.url(s"$endpoint/v1/predictions")
++            .withRequestTimeout(800.millis)
++            .post(
++              Json.obj(
++                "game_id" -> game.id.value,
++                "moves" -> game.sans.map(_.value),
++                "context" -> game.clock.map: clock =>
++                  Json.obj(
++                    "white_rating" -> game.whitePlayer.rating.map(_.value),
++                    "black_rating" -> game.blackPlayer.rating.map(_.value),
++                    "white_clock" -> math.max(0d, clock.remainingTime(Color.white).toSeconds.toDouble),
++                    "black_clock" -> math.max(0d, clock.remainingTime(Color.black).toSeconds.toDouble),
++                    "initial_seconds" -> clock.limitSeconds.value,
++                    "increment_seconds" -> clock.incrementSeconds.value,
++                    "speed" -> game.speed.key
++                  )
++              )
++            )
++            .map: response =>
++              require(response.status == 200, "WDL service unavailable")
++              val body = Json.parse(response.body).as[JsObject]
++              require((body \ "game_id").as[String] == game.id.value, "WDL game mismatch")
++              identity ++ body
++            .recover:
++              case _: Exception => identity ++ Json.obj("status" -> "unavailable", "source" -> "engine")
++      )
+diff --git a/conf/routes b/conf/routes
+index af848df..b83ba05 100644
+--- a/conf/routes
++++ b/conf/routes
+@@ -394,6 +394,7 @@ POST  /bots/dev/asset/$tpe<sound|image|book>/$key<\w{12}(\.\w{2,4})?> controller
+ POST  /bots/dev/asset/mv/$key<\w{12}(\.\w{2,4})?>/:name  controllers.JsBot.devNameAsset(key: String, name: String)
+ 
+ # Round
++GET   /game/$gameId<\w{8}>/win-probability          controllers.Round.winProbability(gameId: GameId)
+ GET   /game/$gameId<\w{8}>                          controllers.Round.watcher(gameId: GameId, color: Color = Color.white)
+ GET   /game/$gameId<\w{8}>/$color<white|black>      controllers.Round.watcher(gameId: GameId, color: Color)
+ GET   /game/$fullId<\w{12}>                         controllers.Round.player(fullId: GameFullId)
+diff --git a/ui/round/css/_round.scss b/ui/round/css/_round.scss
+index 5dc2642..53304bd 100644
+--- a/ui/round/css/_round.scss
++++ b/ui/round/css/_round.scss
+@@ -9,6 +9,7 @@
+ @import 'clock';
+ @import 'material';
+ @import 'moves';
++@import 'win-probability';
+ @import 'control';
+ @import 'icon';
+ @import 'now-playing';
+diff --git a/ui/round/css/_win-probability.scss b/ui/round/css/_win-probability.scss
+new file mode 100644
+index 0000000..c8ad717
+--- /dev/null
++++ b/ui/round/css/_win-probability.scss
+@@ -0,0 +1,44 @@
++.win-probability {
++  order: -1;
++  padding: 0.65rem 0.8rem;
++  background: $c-bg-zebra;
++  border-bottom: 1px solid $c-border;
++  font-size: 0.85rem;
++
++  &__values {
++    display: flex;
++    justify-content: space-between;
++    gap: 0.4rem;
++  }
++
++  &__source {
++    color: $c-font-dim;
++    font-size: 0.75rem;
++    margin-top: 0.3rem;
++  }
++
++  &__bar {
++    display: flex;
++    height: 0.65rem;
++    margin: 0.1rem 0 0.35rem;
++    overflow: hidden;
++    border: 1px solid $c-font-dim;
++    border-radius: 3px;
++  }
++
++  &__white {
++    background: #f2f2f2;
++  }
++
++  &__draw {
++    background: #929292;
++  }
++
++  &__black {
++    background: #252525;
++  }
++
++  &__status {
++    color: $c-font-dim;
++  }
++}
+diff --git a/ui/round/src/ctrl.ts b/ui/round/src/ctrl.ts
+index 721cf3f..d8b1b5a 100644
+--- a/ui/round/src/ctrl.ts
++++ b/ui/round/src/ctrl.ts
+@@ -58,6 +58,7 @@ import TransientMove from './transientMove';
+ import * as util from './util';
+ import { endGameView } from './view/main';
+ import { userTxt } from './view/user';
++import WinProbability from './winProbability';
+ import * as xhr from './xhr';
+ 
+ type GoneBerserk = Partial<ByColor<boolean>>;
+@@ -65,6 +66,7 @@ type GoneBerserk = Partial<ByColor<boolean>>;
+ export default class RoundController implements MoveRootCtrl {
+   data: RoundData;
+   socket: RoundSocket;
++  winProbability?: WinProbability;
+   chessground: CgApi;
+   clock?: ClockCtrl;
+   corresClock?: CorresClockController;
+@@ -157,6 +159,14 @@ export default class RoundController implements MoveRootCtrl {
+     pubsub.on('zen', toggleZenMode);
+ 
+     if (!this.opts.noab && this.isPlaying()) ab.init(this);
++    if (d.winProbability && d.player.spectator && d.game.variant.key === 'standard') {
++      this.winProbability = new WinProbability(() => this.data, redraw);
++      pubsub.on('socket.close', this.winProbability.disconnected);
++      pubsub.on('socket.open', () => {
++        // Initial page data is already authoritative. Only resync after a disconnect.
++        if (this.winProbability?.data?.status === 'stale') this.socket.reload();
++      });
++    }
+   }
+ 
+   private readonly showExpiration = () => {
+@@ -496,6 +506,7 @@ export default class RoundController implements MoveRootCtrl {
+       if (this.data.steps.length > 2) this.data.expiration = undefined;
+       else this.data.expiration.movedAt = Date.now();
+     }
++    this.winProbability?.sync();
+     this.redraw();
+     if (playing && playedColor === d.player.color) {
+       this.transientMove?.clear();
+@@ -548,6 +559,7 @@ export default class RoundController implements MoveRootCtrl {
+     if (posChanged) this.ply = util.lastPly(d);
+     util.upgradeServerData(d);
+     this.data = d;
++    this.winProbability?.sync();
+     this.clearJust();
+     this.shouldSendMoveTime = false;
+     this.updateClockCtrl();
+@@ -578,6 +590,7 @@ export default class RoundController implements MoveRootCtrl {
+     d.game.status = o.status;
+     d.game.abortedBy = o.abortedBy;
+     d.game.boosted = o.boosted;
++    this.winProbability?.sync();
+     d.player.blindfold = false;
+     this.userJump(ply);
+     d.game.fen = util.lastStep(this.data).fen;
+diff --git a/ui/round/src/interfaces.ts b/ui/round/src/interfaces.ts
+index a83a17a..f055719 100644
+--- a/ui/round/src/interfaces.ts
++++ b/ui/round/src/interfaces.ts
+@@ -109,6 +109,7 @@ export interface SocketInEvents {
+ export type EncodedDests = string | Record<string, string>;
+ 
+ export interface RoundData extends GameData {
++  winProbability?: boolean;
+   clock?: ClockData;
+   pref: Pref;
+   steps: RoundStep[];
+diff --git a/ui/round/src/view/replay.ts b/ui/round/src/view/replay.ts
+index fb78301..e294792 100644
+--- a/ui/round/src/view/replay.ts
++++ b/ui/round/src/view/replay.ts
+@@ -20,6 +20,7 @@ import type RoundController from '../ctrl';
+ import type { Step } from '../interfaces';
+ import * as util from '../util';
+ import boardMenu from './boardMenu';
++import winProbability from './winProbability';
+ 
+ const scrollMax = 99999;
+ const moveTag = 'Z7yx';
+@@ -246,6 +247,7 @@ export function render(ctrl: RoundController): LooseVNode {
+   return (
+     !ctrl.nvui &&
+     hl(rmovesTag, [
++      winProbability(ctrl),
+       renderButtons(ctrl),
+       boardMenu(ctrl),
+       initMessage(ctrl) ||
+diff --git a/ui/round/src/view/winProbability.ts b/ui/round/src/view/winProbability.ts
+new file mode 100644
+index 0000000..d68249d
+--- /dev/null
++++ b/ui/round/src/view/winProbability.ts
+@@ -0,0 +1,73 @@
++import { hl, type LooseVNode } from 'lib/view/snabbdom';
++
++import type RoundController from '../ctrl';
++import { wdlPercentages } from '../winProbability';
++
++export default function winProbability(ctrl: RoundController): LooseVNode {
++  if (!ctrl.winProbability) return undefined;
++  const prediction = ctrl.winProbability.data;
++  const replay = ctrl.replaying();
++  const ready = !replay && (prediction?.status === 'ready' || prediction?.status === 'finished');
++  const human =
++    ready && prediction.source === 'engine' && prediction.human?.status === 'ready'
++      ? prediction.human
++      : undefined;
++  const p = ready && (human?.probabilities ?? prediction.probabilities);
++  const values = p && wdlPercentages(p);
++  const source = prediction?.source === 'official' ? 'official' : human?.probabilities ? 'human' : 'engine';
++  const label =
++    source === 'official'
++      ? 'Kết quả chính thức'
++      : source === 'human'
++        ? 'Người chơi · thử nghiệm'
++        : 'Ước tính từ thế cờ';
++  const description =
++    source === 'official'
++      ? 'Kết quả ván đấu đã được xác nhận.'
++      : source === 'human'
++        ? 'Ước tính từ thế cờ, rating và đồng hồ. Mô hình thử nghiệm, chưa hiệu chỉnh cho cộng đồng máy chủ này.'
++        : 'Xác suất theo engine từ thế cờ; không xét rating và đồng hồ của người chơi.';
++  const status = replay
++    ? 'Trở về nước mới nhất để xem xác suất.'
++    : prediction?.status === 'stale'
++      ? 'Mất kết nối · đang chờ thế cờ mới nhất.'
++      : prediction?.status === 'aborted'
++        ? 'Ván đã hủy · không có kết quả.'
++        : prediction?.status === 'unavailable'
++          ? 'Tạm thời chưa có đánh giá.'
++          : prediction?.status === 'busy'
++            ? 'Đang chờ đánh giá…'
++            : 'Đang tính…';
++  return hl(
++    'section.win-probability',
++    {
++      attrs: {
++        'aria-label': 'Xác suất thắng, hòa, thua',
++        'data-state': replay ? 'replay' : (prediction?.status ?? 'pending'),
++        'data-source': values ? source : false,
++        'data-model': values && human ? (human.model_id ?? false) : false,
++      },
++    },
++    [
++      values
++        ? [
++            hl(
++              'div.win-probability__bar',
++              { attrs: { 'aria-hidden': 'true' } },
++              ['white', 'draw', 'black'].map((color, i) =>
++                hl(`span.win-probability__${color}`, {
++                  attrs: { style: `width:${values[i]}%` },
++                }),
++              ),
++            ),
++            hl(
++              'div.win-probability__values',
++              { attrs: { 'aria-live': 'polite' } },
++              ['Trắng', 'Hòa', 'Đen'].map((color, i) => hl('span', `${color} ${values[i].toFixed(1)}%`)),
++            ),
++            hl('div.win-probability__source', { attrs: { title: description } }, label),
++          ]
++        : hl('div.win-probability__status', { attrs: { role: 'status' } }, status),
++    ],
++  );
++}
+diff --git a/ui/round/src/winProbability.ts b/ui/round/src/winProbability.ts
+new file mode 100644
+index 0000000..1b266f8
+--- /dev/null
++++ b/ui/round/src/winProbability.ts
+@@ -0,0 +1,179 @@
++import type { RoundData } from './interfaces';
++
++export interface Wdl {
++  white: number;
++  draw: number;
++  black: number;
++}
++
++export interface Prediction {
++  game_id: string;
++  revision: string;
++  status: 'pending' | 'ready' | 'finished' | 'aborted' | 'unavailable' | 'busy' | 'stale';
++  probabilities?: Wdl;
++  source: 'engine' | 'official';
++  engine?: string;
++  depth?: number;
++  human?: {
++    status: 'ready' | 'unavailable';
++    probabilities?: Wdl;
++    model_id?: string;
++    reason?:
++      | 'missing_context'
++      | 'outside_scope'
++      | 'model_unavailable'
++      | 'score_unavailable'
++      | 'invalid_response';
++  };
++}
++
++// History + result, not ply alone: a takeback followed by a different move can reuse a ply.
++export const wdlRevision = (d: RoundData): string =>
++  `${d.game.id}|${d.steps
++    .map(s => s.san)
++    .filter(Boolean)
++    .join(' ')}|${d.game.status.id}|${d.game.winner ?? ''}`;
++
++export function validWdl(p?: Wdl): p is Wdl {
++  if (!p) return false;
++  const values = [p.white, p.draw, p.black];
++  return (
++    values.every(x => Number.isFinite(x) && x >= 0 && x <= 1) &&
++    Math.abs(values.reduce((a, b) => a + b, 0) - 1) < 0.00001
++  );
++}
++
++// Largest-remainder rounding keeps the three displayed percentages at exactly 100.0%.
++export function wdlPercentages(p: Wdl): number[] {
++  const raw = [p.white, p.draw, p.black].map(x => x * 1000);
++  const rounded = raw.map(Math.floor);
++  const order = [0, 1, 2].sort((a, b) => raw[b] - rounded[b] - (raw[a] - rounded[a]));
++  const missing = 1000 - rounded.reduce((a, b) => a + b, 0);
++  for (let i = 0; i < missing; i++) rounded[order[i]]++;
++  return rounded.map(x => x / 10);
++}
++
++export default class WinProbability {
++  data?: Prediction;
++  private revision = '';
++  private timer?: ReturnType<typeof setTimeout>;
++  private request?: AbortController;
++
++  constructor(
++    private readonly round: () => RoundData,
++    private readonly redraw: () => void,
++  ) {
++    document.addEventListener('visibilitychange', this.visibility);
++    this.sync();
++  }
++
++  sync = (): void => {
++    const d = this.round();
++    const revision = wdlRevision(d);
++    if (revision === this.revision) return;
++    this.cancel();
++    this.revision = revision;
++    this.data = undefined;
++    if (d.game.status.id >= 25) {
++      this.data = {
++        game_id: d.game.id,
++        revision,
++        status: d.game.status.id === 25 ? 'aborted' : 'finished',
++        source: 'official',
++        probabilities:
++          d.game.status.id === 25
++            ? undefined
++            : {
++                white: Number(d.game.winner === 'white'),
++                draw: Number(!d.game.winner),
++                black: Number(d.game.winner === 'black'),
++              },
++      };
++    } else if (!document.hidden) void this.load();
++  };
++
++  destroy = (): void => {
++    this.cancel();
++    document.removeEventListener('visibilitychange', this.visibility);
++  };
++
++  disconnected = (): void => {
++    if (this.data?.source === 'official') return;
++    this.cancel();
++    this.data = { game_id: this.round().game.id, revision: this.revision, status: 'stale', source: 'engine' };
++    this.revision = '';
++    this.redraw();
++  };
++
++  private cancel(): void {
++    clearTimeout(this.timer);
++    const request = this.request;
++    this.request = undefined;
++    request?.abort();
++  }
++
++  private readonly visibility = (): void => {
++    if (document.hidden) this.cancel();
++    else if (!this.data || ['pending', 'busy', 'unavailable'].includes(this.data.status)) void this.load();
++  };
++
++  private async load(): Promise<void> {
++    const revision = this.revision;
++    const gameId = this.round().game.id;
++    const request = (this.request = new AbortController());
++    const timeout = setTimeout(() => request.abort(), 1500);
++    let retry = 2000;
++    try {
++      const response = await fetch(`/game/${gameId}/win-probability`, {
++        signal: request.signal,
++        credentials: 'same-origin',
++        cache: 'no-store',
++        headers: { Accept: 'application/json' },
++      });
++      if (this.request !== request || this.revision !== revision) return;
++      if (response.status === 403 || response.status === 404) {
++        this.data = { game_id: gameId, revision, status: 'unavailable', source: 'engine' };
++        retry = 0;
++      } else {
++        if (!response.ok) throw new Error('WDL service unavailable');
++        const data: Prediction = await response.json();
++        if (this.request !== request || this.revision !== revision) return;
++        if (data.game_id !== gameId || data.revision !== revision) {
++          retry = 200;
++        } else {
++          if (['ready', 'finished'].includes(data.status) && !validWdl(data.probabilities))
++            throw new Error('Invalid WDL');
++          if (!['pending', 'ready', 'finished', 'aborted', 'unavailable', 'busy'].includes(data.status))
++            throw new Error('Invalid WDL status');
++          if (data.human) {
++            if (
++              data.human.status === 'ready' &&
++              validWdl(data.human.probabilities) &&
++              typeof data.human.model_id === 'string' &&
++              data.human.model_id.length > 0
++            ) {
++              // The human estimate is optional; malformed data must not hide valid engine WDL.
++            } else if (data.human.status === 'unavailable') {
++              data.human = { status: 'unavailable', reason: data.human.reason };
++            } else data.human = { status: 'unavailable', reason: 'invalid_response' };
++          }
++          this.data = data;
++          retry = ['ready', 'finished', 'aborted'].includes(data.status)
++            ? 0
++            : data.status === 'pending'
++              ? 200
++              : 2000;
++        }
++      }
++    } catch {
++      if (this.request !== request || this.revision !== revision) return;
++      this.data = { game_id: gameId, revision, status: 'unavailable', source: 'engine' };
++    } finally {
++      clearTimeout(timeout);
++      if (this.request === request && this.revision === revision) {
++        this.redraw();
++        if (retry && !document.hidden) this.timer = setTimeout(() => void this.load(), retry);
++      }
++    }
++  }
++}
+diff --git a/ui/round/tests/winProbability.test.ts b/ui/round/tests/winProbability.test.ts
+new file mode 100644
+index 0000000..16dc213
+--- /dev/null
++++ b/ui/round/tests/winProbability.test.ts
+@@ -0,0 +1,169 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { setImmediate } from 'node:timers/promises';
++
++import type { RoundData } from '../src/interfaces';
++import WinProbability, { validWdl, wdlPercentages, wdlRevision } from '../src/winProbability';
++
++const round = (moves: string[] = []): RoundData =>
++  ({
++    game: { id: 'test1234', status: { id: 20, name: 'started' } },
++    steps: [{ san: '' }, ...moves.map(san => ({ san }))],
++  }) as unknown as RoundData;
++
++const ready = (d: RoundData, white = 0.7): Response =>
++  new Response(
++    JSON.stringify({
++      game_id: d.game.id,
++      revision: wdlRevision(d),
++      status: 'ready',
++      source: 'engine',
++      probabilities: { white, draw: 0.2, black: 0.8 - white },
++    }),
++  );
++
++test('all rounded WDL values sum to exactly 100.0%', () => {
++  for (let white = 0; white <= 1; white += 0.017) {
++    for (let draw = 0; draw <= 1 - white; draw += 0.019) {
++      const values = wdlPercentages({ white, draw, black: 1 - white - draw });
++      assert.equal(Math.round(values.reduce((a, b) => a + b, 0) * 10), 1000);
++      assert.ok(values.every(v => v >= 0 && v <= 100));
++    }
++  }
++  assert.deepEqual(wdlPercentages({ white: 1, draw: 0, black: 0 }), [100, 0, 0]);
++});
++
++test('reject invalid and nonfinite probabilities', () => {
++  assert.equal(validWdl({ white: 0.3, draw: 0.3, black: 0.3 }), false);
++  assert.equal(validWdl({ white: NaN, draw: 0.5, black: 0.5 }), false);
++  assert.equal(validWdl({ white: 1.1, draw: 0, black: -0.1 }), false);
++  assert.equal(validWdl({ white: 0.6, draw: 0.3, black: 0.1 }), true);
++});
++
++test('invalid human probabilities are hidden while the valid engine result remains usable', async t => {
++  const d = round(['e4']);
++  const payload = await ready(d).json();
++  payload.human = { status: 'ready', model_id: 'pilot-v1', probabilities: { white: 2, draw: 0, black: -1 } };
++  t.mock.method(globalThis, 'fetch', async () => new Response(JSON.stringify(payload)));
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  await setImmediate();
++  assert.equal(ctrl.data?.status, 'ready');
++  assert.equal(ctrl.data?.probabilities?.white, 0.7);
++  assert.notEqual(ctrl.data?.human?.status, 'ready');
++  assert.equal(ctrl.data?.human?.probabilities, undefined);
++});
++
++test('late response cannot replace a different move at the same ply', async t => {
++  const responses: ((r: Response) => void)[] = [];
++  t.mock.method(globalThis, 'fetch', () => new Promise<Response>(resolve => responses.push(resolve)));
++  let d = round(['e4', 'e5']);
++  const previous = d;
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  d = round(['e4', 'c5']);
++  ctrl.sync();
++  responses[0](ready(previous));
++  await setImmediate();
++  assert.equal(ctrl.data, undefined);
++  responses[1](ready(d, 0.6));
++  await setImmediate();
++  assert.equal(ctrl.data?.probabilities?.white, 0.6);
++});
++
++test('a new move immediately clears the previous estimate', async t => {
++  const responses: ((r: Response) => void)[] = [];
++  t.mock.method(globalThis, 'fetch', () => new Promise<Response>(resolve => responses.push(resolve)));
++  let d = round(['e4']);
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  responses[0](ready(d));
++  await setImmediate();
++  assert.equal(ctrl.data?.status, 'ready');
++  d = round(['e4', 'e5']);
++  ctrl.sync();
++  assert.equal(ctrl.data, undefined);
++});
++
++test('official result takes precedence even when engine reply arrives later', async t => {
++  let respond!: (r: Response) => void;
++  t.mock.method(
++    globalThis,
++    'fetch',
++    () =>
++      new Promise<Response>(resolve => {
++        respond = resolve;
++      }),
++  );
++  const d = round(['e4']);
++  const oldReply = ready(d);
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  d.game.status = { id: 31, name: 'resign' };
++  d.game.winner = 'black';
++  ctrl.sync();
++  respond(oldReply);
++  await setImmediate();
++  assert.equal(ctrl.data?.source, 'official');
++  assert.deepEqual(ctrl.data?.probabilities, { white: 0, draw: 0, black: 1 });
++});
++
++test('aborted games have no invented result or engine request', t => {
++  const fetch = t.mock.method(globalThis, 'fetch');
++  const d = round();
++  d.game.status = { id: 25, name: 'aborted' };
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  assert.equal(ctrl.data?.status, 'aborted');
++  assert.equal(ctrl.data?.probabilities, undefined);
++  assert.equal(fetch.mock.callCount(), 0);
++});
++
++test('service failure shows unavailable without retaining numbers', async t => {
++  t.mock.method(globalThis, 'fetch', async () => {
++    throw new Error('offline');
++  });
++  const ctrl = new WinProbability(
++    () => round(),
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  await setImmediate();
++  assert.equal(ctrl.data?.status, 'unavailable');
++  assert.equal(ctrl.data?.probabilities, undefined);
++});
++
++test('disconnect clears estimates and a reload resumes the same position', async t => {
++  const responses: ((r: Response) => void)[] = [];
++  t.mock.method(globalThis, 'fetch', () => new Promise<Response>(resolve => responses.push(resolve)));
++  const d = round(['e4']);
++  const ctrl = new WinProbability(
++    () => d,
++    () => {},
++  );
++  t.after(ctrl.destroy);
++  responses[0](ready(d));
++  await setImmediate();
++  ctrl.disconnected();
++  assert.equal(ctrl.data?.status, 'stale');
++  assert.equal(ctrl.data?.probabilities, undefined);
++  ctrl.sync();
++  responses[1](ready(d));
++  await setImmediate();
++  assert.equal(ctrl.data?.status, 'ready');
++});
+diff --git a/ui/round/tests/winProbabilityView.test.ts b/ui/round/tests/winProbabilityView.test.ts
+new file mode 100644
+index 0000000..e3302d9
+--- /dev/null
++++ b/ui/round/tests/winProbabilityView.test.ts
+@@ -0,0 +1,68 @@
++import assert from 'node:assert/strict';
++import { test } from 'node:test';
++import { init, attributesModule, type VNode } from 'snabbdom';
++
++import type RoundController from '../src/ctrl';
++import render from '../src/view/winProbability';
++
++const prediction = {
++  status: 'ready',
++  source: 'engine',
++  engine: 'Stockfish 15.1',
++  depth: 17,
++  probabilities: { white: 0.1, draw: 0.8, black: 0.1 },
++  human: { status: 'ready', model_id: 'pilot-v1', probabilities: { white: 0.6, draw: 0.1, black: 0.3 } },
++};
++
++function panel(data: unknown = prediction, replay = false): HTMLElement {
++  const ctrl = { winProbability: { data }, replaying: () => replay } as unknown as RoundController;
++  return init([attributesModule])(document.createElement('div'), render(ctrl) as VNode).elm as HTMLElement;
++}
++
++test('one bar prefers the human estimate without engine diagnostics or duplicate percentages', () => {
++  const view = panel();
++  assert.equal(view.querySelectorAll('.win-probability__bar').length, 1);
++  assert.equal(view.querySelectorAll('.win-probability__values').length, 1);
++  assert.equal(view.textContent.match(/\d+\.\d%/g)?.length, 3);
++  assert.equal(view.dataset.source, 'human');
++  assert.match(view.textContent, /Người chơi · thử nghiệm/);
++  assert.match(view.querySelector('.win-probability__values')!.textContent, /Trắng 60.0%/);
++  assert.equal(view.querySelector('.win-probability__white')!.getAttribute('style'), 'width:60%');
++  assert.doesNotMatch(view.textContent, /Theo engine|Stockfish|d17/);
++});
++
++test('missing or unsupported human context falls back to one clearly identified engine estimate', () => {
++  for (const reason of ['missing_context', 'outside_scope', 'model_unavailable']) {
++    const view = panel({ ...prediction, human: { status: 'unavailable', reason } });
++    assert.equal(view.dataset.source, 'engine');
++    assert.match(view.textContent, /Ước tính từ thế cờ/);
++    assert.match(view.querySelector('.win-probability__values')!.textContent, /Trắng 10.0%/);
++    assert.match(view.querySelector('.win-probability__source')!.getAttribute('title')!, /engine/);
++    assert.equal(view.textContent.match(/\d+\.\d%/g)?.length, 3);
++  }
++});
++
++test('official result overrides the preferred human estimate', () => {
++  const view = panel({
++    ...prediction,
++    status: 'finished',
++    source: 'official',
++    probabilities: { white: 0, draw: 1, black: 0 },
++  });
++  assert.equal(view.dataset.source, 'official');
++  assert.match(view.textContent, /Kết quả chính thức/);
++  assert.match(view.querySelector('.win-probability__values')!.textContent, /Hòa 100.0%/);
++  assert.doesNotMatch(view.textContent, /thử nghiệm/);
++});
++
++test('replay and unavailable positions never retain either source of probabilities', () => {
++  const views = [panel(prediction, true)];
++  for (const status of ['pending', 'busy', 'stale', 'unavailable', 'aborted'])
++    views.push(panel({ ...prediction, status }));
++  for (const view of views) {
++    assert.equal(view.querySelector('.win-probability__bar'), null);
++    assert.equal(view.querySelector('.win-probability__values'), null);
++    assert.equal(view.querySelector('.win-probability__source'), null);
++    assert.equal(view.dataset.source, undefined);
++  }
++});

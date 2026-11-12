@@ -1,0 +1,67 @@
+{
+  "browser_errors": [],
+  "parity_tolerance": 1e-14,
+  "cases": [
+    {
+      "cp": 47,
+      "white_rating": 1500,
+      "white_clock": 1240,
+      "display": [
+        50.8,
+        3.3,
+        45.9
+      ]
+    },
+    {
+      "cp": 0,
+      "white_rating": 1500,
+      "white_clock": 1240,
+      "display": [
+        44.4,
+        4,
+        51.6
+      ]
+    },
+    {
+      "cp": 100,
+      "white_rating": 1500,
+      "white_clock": 1240,
+      "display": [
+        56.8,
+        2.8,
+        40.4
+      ]
+    },
+    {
+      "cp": -100,
+      "white_rating": 1500,
+      "white_clock": 1240,
+      "display": [
+        34.1,
+        2.6,
+        63.3
+      ]
+    },
+    {
+      "cp": 47,
+      "white_rating": 1900,
+      "white_clock": 1240,
+      "display": [
+        60.3,
+        3.5,
+        36.2
+      ]
+    },
+    {
+      "cp": 47,
+      "white_rating": 1500,
+      "white_clock": 10,
+      "display": [
+        9,
+        1.4,
+        89.6
+      ]
+    }
+  ],
+  "mobile_overflow": false
+}

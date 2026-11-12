@@ -1,0 +1,15 @@
+{
+  "verified_at_utc": "2026-11-05T10:56:43.641325+00:00",
+  "round_bundle": "round.GFD3AYWC.js",
+  "patch_files": 13,
+  "patch_forward_check": true,
+  "patch_reverse_check": true,
+  "files": {
+    "infra/lila-docker/repos/lila/ui/round/src/view/winProbability.ts": "5284eff3fdb7a73c11cc287def64a2f296b3a8f186bb73d07850a1ed243693be",
+    "infra/lila-docker/repos/lila/ui/round/css/_win-probability.scss": "f10a35f39a298602c6f721e6d04b91757e3b5fe31b03d342c123296be8498d54",
+    "infra/lila-docker/repos/lila/ui/round/tests/winProbabilityView.test.ts": "6cd1adc27b3032f4ca01f8976f4b6d8209119c449328977cb90a927b8b18542b",
+    "patches/lila-win-probability.patch": "3cd98fe15b4fff2e83771cd541c1fab479db87a0b68f08a05769736ced09280f",
+    "scripts/browser-smoke.mjs": "6f80e4ad444a474a082d626dca3c1ea8152db3e5ac29ada1e2f31200459673a6",
+    "services/prediction/models/human-v1.json": "0822611ce98edcc7c3721483c430bce78c0df94c0ea5dc641e3fe09a69455fd0"
+  }
+}

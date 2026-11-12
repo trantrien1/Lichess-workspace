@@ -1,0 +1,7 @@
+schema: spec-driven
+
+context: |
+  Self-hosted Lichess fork. Scala backend, TypeScript/Snabbdom frontend.
+  Independent Python/Stockfish worker. Local Docker development on Windows/WSL2.
+  Preserve gameplay responsiveness. Prefer existing Lichess APIs and test tooling.
+  The user delegates implementation and reviews executable acceptance evidence.

@@ -1,0 +1,16 @@
+{
+  "report_local_links_valid": 33,
+  "provenance_hashes_valid": 10,
+  "browser_checks": {
+    "browser-registered.json": {
+      "assertions": 90,
+      "p95_ms": 554
+    },
+    "browser-anonymous.json": {
+      "assertions": 91,
+      "p95_ms": 561
+    }
+  },
+  "pilot_gates_passed": 6,
+  "final_health_valid": true
+}

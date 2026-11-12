@@ -1,0 +1,38 @@
+{
+  "created_at": "2026-11-05T10:57:21.106Z",
+  "url": "http://localhost:8080/game/g54Kmpdg/white",
+  "gameId": "g54Kmpdg",
+  "whiteName": "DemoWhitec175270a",
+  "blackName": "DemoBlackb96bdb40",
+  "time_control": "20+5 rapid",
+  "ply": 20,
+  "panel_text": "Trắng 50.8%\nHòa 3.3%\nĐen 45.9%\nNgười chơi · thử nghiệm",
+  "prediction": {
+    "game_id": "g54Kmpdg",
+    "revision": "g54Kmpdg|e4 e5 Nf3 Nc6 Bb5 a6 Ba4 Nf6 O-O Be7 Re1 b5 Bb3 d6 c3 O-O h3 Nb8 d4 Nbd7|20|",
+    "position_key": "23ad77948be37e2258a2e6d1e6e88ca9",
+    "fen": "r1bq1rk1/2pnbppp/p2p1n2/1p2p3/3PP3/1BP2N1P/PP3PP1/RNBQR1K1 w - - 1 11",
+    "ply": 20,
+    "status": "ready",
+    "probabilities": {
+      "white": 0.071,
+      "draw": 0.929,
+      "black": 0
+    },
+    "engine": "Stockfish 15.1",
+    "depth": 17,
+    "elapsed_ms": 254,
+    "evaluation_cp": 47,
+    "human": {
+      "status": "ready",
+      "probabilities": {
+        "white": 0.5081907041321083,
+        "draw": 0.033295970892501116,
+        "black": 0.4585133249753906
+      },
+      "model_id": "human-logit-v1-54213e4fef50"
+    },
+    "source": "engine"
+  },
+  "browser_errors": []
+}

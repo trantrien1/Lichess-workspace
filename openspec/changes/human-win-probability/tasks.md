@@ -124,3 +124,30 @@ The in-conversation calculator matches Python within 1e-14 in six scenarios; bro
 exceptions and mobile overflow are zero. No runtime code, model or dataset changed.
 Docker Desktop was not running during this explanation; localhost:8080 answered as
 Burp Suite, so historical position evidence was used without changing local services.
+
+## GitHub branch publication — 2026-11-12
+
+- [x] Publish the workspace to `trantrien1/Lichess-workspace` on the separate branch
+  `codex/live-win-probability`, based on main commit
+  `c090cb548411e763aa3bf7b9876253201322f78b`.
+- [x] Verify the first published snapshot, commit
+  `c74e4b619af17793aeaaecd6e53cee34faf76e59`, against `git ls-remote`.
+- [x] Preserve all six existing vendored upstream directories unchanged; add 89
+  workspace files, including source, model, patches, scripts, specifications and reports.
+  Training data, caches, local upstream checkouts and runtime artifacts remain ignored.
+- [x] Preserve the exported model and upstream patch bytes with scoped `.gitattributes`.
+  Staged blob SHA256 matches the workspace: model
+  `0822611ce98edcc7c3721483c430bce78c0df94c0ea5dc641e3fe09a69455fd0`, patch
+  `3cd98fe15b4fff2e83771cd541c1fab479db87a0b68f08a05769736ced09280f`.
+
+Fresh verification: 56 Python tests passed in 2.31 seconds, with the existing
+Starlette/httpx deprecation warning; Ruff passed. The patch passed both reverse
+checking against the working Lila checkout and forward cached checking with
+`--whitespace=error-all` against its pinned upstream HEAD. The initial sandbox run
+encountered a uv cache write error and stalled in the async cancellation test;
+the complete frozen/offline test run outside the sandbox passed without code changes.
+
+This was a source-publication task. Scala/TypeScript builds, browser acceptance,
+live engine benchmarks and a fresh-machine bootstrap were not rerun. No application
+behavior, model parameters or local service configuration was changed. Existing
+pilot limitations above remain in force; this branch is not a public deployment.

@@ -22,7 +22,15 @@ final class Commentary(env: Env, ws: StandaloneWSClient)
   private val token = env.config.getOptional[String]("commentary.token").getOrElse("")
   private val connections = new ConcurrentHashMap[String, Promise[JsObject]]()
   private val superseded = Json.obj("type" -> "superseded")
-  private val voices = Set("piper-vais1000")
+  // The same ids as services/commentary/voices.py and ui/round/src/commentary.ts.
+  private val voices = Set(
+    "piper-vais1000",
+    "piper-vais1000-low",
+    "piper-vais1000-high",
+    "piper-vivos-28",
+    "piper-vivos-45",
+    "piper-vivos-40"
+  )
 
   private val requests = new lila.round.CommentaryRequests(
     job =>
@@ -44,6 +52,23 @@ final class Commentary(env: Env, ws: StandaloneWSClient)
         .recover { case _ => () }
       ()
   )
+
+  /** One fixed sentence in a voice, so a player hears it when choosing. Prepared once by the service. */
+  def sample(voice: String) = Open:
+    if !enabled || token.isEmpty then notFound
+    else if !voices(voice) then fuccess(BadRequest)
+    else
+      ws.url(s"$endpoint/sample/$voice")
+        .addHttpHeaders("Authorization" -> s"Bearer $token")
+        .withRequestTimeout(10.seconds)
+        .get()
+        .map: response =>
+          if response.status != 200 then ServiceUnavailable
+          else
+            Ok(response.bodyAsBytes)
+              .as("audio/wav")
+              .withHeaders(CACHE_CONTROL -> "private, max-age=3600")
+        .recover { case _ => ServiceUnavailable }
 
   def stream(gameId: GameId, voice: String) = Open { ctx ?=>
     if !enabled || token.isEmpty then notFound

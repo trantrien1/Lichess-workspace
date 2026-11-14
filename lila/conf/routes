@@ -2,6 +2,7 @@
 
 # Lobby
 GET   /commentary/$gameId<\w{8}>       controllers.Commentary.stream(gameId: GameId, voice: String ?= "piper-vais1000")
+GET   /commentary/voice/$voice<[a-z0-9-]{1,40}> controllers.Commentary.sample(voice: String)
 GET   /                                controllers.Lobby.home
 GET   /lobby/seeks                     controllers.Lobby.seeks
 

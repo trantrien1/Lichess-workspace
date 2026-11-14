@@ -13,6 +13,15 @@
     "url": "https://huggingface.co/rhasspy/piper-voices/resolve/e7229f7d33a10e145e109b886d661984201ac3c4/vi/vi_VN/vais1000/medium/vi_VN-vais1000-medium.onnx.json",
     "sha256": "fafb9da1354ed4b77c31af228ed41fb41cd825c14cffa105454b25e6ae751ee0"
   },
+  "vi_VN-vivos-x_low.onnx": {
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/2f358b6a560e3a913ebf509b2f3344f20b367f94/vi/vi_VN/vivos/x_low/vi_VN-vivos-x_low.onnx",
+    "sha256": "6ab13374eb0862021a545befe7727aef59e16117f1c075aa9e0362237ecc98ae",
+    "license": "Dataset: CC-BY-NC-SA-4.0 (non-commercial); see MODEL_CARD"
+  },
+  "vi_VN-vivos-x_low.onnx.json": {
+    "url": "https://huggingface.co/rhasspy/piper-voices/resolve/2f358b6a560e3a913ebf509b2f3344f20b367f94/vi/vi_VN/vivos/x_low/vi_VN-vivos-x_low.onnx.json",
+    "sha256": "9dc373d69b0e4f39d864cb8ac9fe42cee49817a0f02d831e57a9ce6e944e234a"
+  },
   "llama.tar.gz": {
     "url": "https://github.com/ggml-org/llama.cpp/releases/download/b12069/llama-b12069-bin-ubuntu-x64.tar.gz",
     "sha256": "70df3ef8becd405b9ebc13b925387715ae7dccb0f034fd5f46a4034b350130a1",

@@ -1,40 +1,17 @@
 """Vietnamese commentary composed from legal-board observations and bounded engine evidence.
 
-All variants are complete assertions checked here, rather than unvalidated free
-text. Every live ply is eligible, independently of player color or human/bot role.
+This module decides what is true and which motif fits; the sentences come from `phrases.py`.
+Every live ply is eligible, independently of player color or human/bot role.
 """
-
-import hashlib
 
 import chess
 
 from core import PIECES, square_name
+from insight import analyse, choose, position_summary
+from phrases import IDLE, MOVE, OPENING_CENTRAL, OPENING_FLEXIBLE, OPENING_GENERAL, OPENING_RARE, fill, seed_of
 
 CENTRE = (chess.D4, chess.E4, chess.D5, chess.E5)
 VALUE = {chess.PAWN: 1, chess.KNIGHT: 3, chess.BISHOP: 3, chess.ROOK: 5, chess.QUEEN: 9, chess.KING: 0}
-
-INTRO_PHRASES = [
-    "Ván đấu chính thức bắt đầu! Quân Trắng sẽ là người đi trước.",
-    "Bàn cờ đã sẵn sàng, hãy cùng theo dõi cuộc đấu trí giữa hai kỳ thủ.",
-    "Chào mừng bạn đến với ván đấu. Cùng chờ xem hai bên sẽ lựa chọn lối chơi nào.",
-    "Một ván cờ mới lại mở ra, hứa hẹn nhiều pha xử lý thú vị từ cả hai phía.",
-    "Hai kỳ thủ đã vào vị trí. Liệu hôm nay sẽ là đôi công rực lửa hay đấu trí chắc chắn?",
-]
-TRANSITION_TEXT = "Ván cờ đang diễn biến rất căng thẳng, cùng theo dõi thế mới nhất."
-OPENING_CENTRAL = [
-    "Trắng mở màn bằng nước đẩy tốt quen thuộc, chủ động chiếm lĩnh trung tâm.",
-    "Không chần chừ, Trắng mở đường cho các quân chủ lực phát triển.",
-    "Trắng đẩy tốt vào trung tâm, một cách nhập cuộc đầy chủ động.",
-]
-OPENING_FLEXIBLE = [
-    "Trắng nhập cuộc điềm tĩnh, ưu tiên sự linh hoạt.",
-    "Một nước mở màn mang tính thăm dò của Trắng.",
-    "Trắng lựa chọn cách mở màn linh hoạt, chưa vội tấn công.",
-]
-OPENING_GENERAL = [
-    "Nước cờ đầu tiên đã được đưa ra, cuộc đối đầu chính thức khởi động.",
-    "Trắng đã đưa ra lời chào đầu tiên, cùng xem Đen đáp trả thế nào.",
-]
 
 
 def describe(before, move):
@@ -102,7 +79,16 @@ def position_facts(facts):
         "looseMovedPiece": loose, "ambiguous": ambiguous, "materialBalance": material,
         "recapture": bool(previous and previous["capture"] and current["capture"] and previous["to"] == current["to"]),
         "sparse": len(board.piece_map()) <= 10 and not board.queens,
+        "checkAgain": board.is_check() and len(board.move_stack) >= 3 and checked_after(board, 2),
     }
+
+
+def checked_after(board, back):
+    """Whether the move `back` plies before the last one also gave check."""
+    probe = board.copy(stack=True)
+    for _ in range(back):
+        probe.pop()
+    return probe.is_check()
 
 
 def assessment(facts):
@@ -131,39 +117,64 @@ def assessment(facts):
                                   and pre["cp"] >= 100 and post["cp"] <= 20)}
 
 
-def event_phrases(move, position):
-    side, piece = move["mover"], move["piece"]
-    target = square_name(chess.parse_square(move["to"]))
-    origin = square_name(chess.parse_square(move["from"]))
+def move_context(facts):
+    """The verified facts a move sentence may mention."""
+    m, p = facts.values["move"], facts.values.get("position", {})
+    side = m["mover"]
+    opponent = "Đen" if side == "Trắng" else "Trắng"
+    piece, captured = m["piece"], m["capture"] or ""
+    action = f"{side} vừa dùng {piece} bắt {captured} {opponent}" if captured else ""
+    if m["enPassant"]:
+        action += " qua đường"
+    if m["promotion"]:
+        action += f", phong {m['promotion']}"
+    wing = m.get("wing") or ("vua" if chess.square_file(chess.parse_square(m["to"])) >= 4 else "hậu")
+    targets = p.get("checkForkTargets") or []
+    return {"side": side, "opponent": opponent, "to_move": opponent, "piece": piece, "Piece": piece.capitalize(),
+            "captured": captured, "Captured": captured.capitalize(),
+            "target": square_name(chess.parse_square(m["to"])), "origin": square_name(chess.parse_square(m["from"])),
+            "wing": wing, "castle": "ngắn" if wing == "vua" else "dài", "promo": m["promotion"] or "",
+            "victim": targets[0]["piece"] if targets else "", "action": action}
+
+
+def brief(facts):
+    """The move in a few words, for players moving faster than a sentence can be read."""
+    m, ctx = facts.values["move"], move_context(facts)
+    if m["castling"]:
+        text = f"{ctx['side']} nhập thành {ctx['castle']}"
+    elif m["promotion"]:
+        text = f"Tốt {ctx['side']} phong {ctx['promo']} ở {ctx['target']}"
+    elif m["capture"]:
+        text = f"{ctx['Piece']} {ctx['side']} ăn {ctx['captured']} {ctx['target']}"
+    else:
+        text = f"{ctx['Piece']} {ctx['side']} tới {ctx['target']}"
+    return text + (", chiếu!" if m["check"] else ".")
+
+
+def event_phrases(move, position, ctx):
+    """Plain descriptions of the move."""
     if move["castling"]:
-        return [f"{side} vừa nhập thành cánh {move['wing']}", f"{side} đưa vua về cánh {move['wing']} bằng nước nhập thành",
-                f"{side} quyết định nhập thành cánh {move['wing']}", f"Vua {side.lower()} đã nhập thành về cánh {move['wing']}"]
+        return fill(MOVE["castling"], ctx)
     if move["promotion"]:
-        capture = f"bắt {move['capture']} và " if move["capture"] else ""
-        return [f"{side} {capture}phong cấp thành {move['promotion']} tại {target}",
-                f"Tốt {side.lower()} đã {capture}phong cấp thành {move['promotion']} ở {target}"]
+        return fill(MOVE["promotion"], ctx)
     if move["enPassant"]:
-        return [f"{side} bắt tốt qua đường tại {target}", f"Một nước bắt tốt qua đường của {side.lower()} ở {target}"]
+        return fill(MOVE["en_passant"], ctx)
     if move["capture"]:
-        return [f"{side} dùng {piece} bắt {move['capture']} tại {target}",
-                f"{piece.capitalize()} {side.lower()} vừa ăn {move['capture']} ở {target}",
-                f"{side} chọn bắt {move['capture']} bằng {piece} tại {target}",
-                f"Quân {move['capture']} ở {target} đã bị {piece} {side.lower()} bắt"]
+        return fill(MOVE["capture"], ctx)
     if position.get("ambiguous"):
-        return [f"{side} đưa {piece} từ {origin} đến {target}", f"{piece.capitalize()} {side.lower()} từ {origin} chuyển sang {target}"]
+        return fill(MOVE["event_ambiguous"], ctx)
     if position.get("development"):
-        return [f"{side} phát triển {piece} lên {target}", f"{side} đưa {piece} vào cuộc ở {target}",
-                f"{piece.capitalize()} {side.lower()} rời hàng cuối, tiến lên {target}", f"{side} triển khai {piece} tại {target}"]
-    return [f"{side} điều {piece} sang {target}", f"{side} chọn nước {piece} đến {target}",
-            f"{piece.capitalize()} {side.lower()} vừa chuyển sang {target}", f"{side} đặt {piece} tại {target}"]
+        return fill(MOVE["development"], ctx)
+    if move["piece"] == "tốt":
+        return fill(MOVE["event_pawn"], ctx)
+    if move["piece"] == "vua":
+        return fill(MOVE["event_king"], ctx)
+    return fill(MOVE["event"], ctx)
 
 
 def theme_phrases(facts, quality):
     p, m = facts.values["position"], facts.values["move"]
-    side = m["mover"]
-    opponent = "Đen" if side == "Trắng" else "Trắng"
-    piece = m["piece"]
-    target = square_name(chess.parse_square(m["to"]))
+    ctx = move_context(facts)
     first_move = (facts.board.ply() == 1 and len(facts.board.move_stack) == 1
                   and facts.before.fen() == chess.STARTING_FEN)
     if first_move:
@@ -171,106 +182,83 @@ def theme_phrases(facts, quality):
             return "opening_central", OPENING_CENTRAL + OPENING_GENERAL
         if m["uci"] in ("g1f3", "b1c3", "c2c4", "g2g3", "b2b3"):
             return "opening_flexible", OPENING_FLEXIBLE + OPENING_GENERAL
-        return "opening_general", OPENING_GENERAL
+        return "opening_general", OPENING_RARE + OPENING_GENERAL
+
+    def say(motif, *keys):
+        return motif, fill([t for key in (keys or (motif,)) for t in MOVE[key]], ctx)
     # Describe what just HAPPENED before discussing a possible next capture.
     # Actor and victim colors are explicit, including recaptures of equal pieces.
     if m["capture"]:
-        action = f"{side} vừa dùng {piece} bắt {m['capture']} {opponent}"
-        if m["enPassant"]:
-            action += " qua đường"
-        if m["promotion"]:
-            action += f", phong {m['promotion']}"
         if m["check"]:
-            if p["checkForkTargets"]:
-                victim = p["checkForkTargets"][0]["piece"]
-                return "capture_check_fork", [action + f", chiếu vua và nhắm {victim}!",
-                                              action + f", vừa chiếu vừa đe dọa {victim}!"]
-            return "capture_check", [action + ", đồng thời chiếu vua!", action + ", chiếu tướng!"]
+            return say("capture_check_fork") if p["checkForkTargets"] else say("capture_check")
         if m["promotion"]:
-            return "promotion_capture", [action + "!",
-                                         f"Tốt {side} bắt {m['capture']} {opponent} rồi phong {m['promotion']}!"]
-        if quality["mistake"] or quality["lostAdvantage"]:
-            return "capture_question", [action + f", liệu có ý đồ gì?",
-                                        action + f", liệu còn tính toán phía sau?"]
+            return say("promotion_capture")
+        # Taking back is the natural reply; "is there an idea behind it?" sounds absurd there.
         if p["recapture"]:
-            return "exchange", [action + ".", f"{side} dùng {piece} bắt lại {m['capture']} {opponent}.",
-                                f"{piece.capitalize()} {side} vừa bắt lại {m['capture']} {opponent} ở {target}."]
-        return "capture", [action + ".", f"{piece.capitalize()} {side} bắt {m['capture']} {opponent} tại {target}.",
-                           f"{side} dùng {piece} ăn {m['capture']} {opponent} ở {target}."]
+            return say("exchange")
+        if quality["mistake"] or quality["lostAdvantage"]:
+            return say("capture_question")
+        if m["enPassant"]:
+            return say("en_passant")
+        return say("capture")
     # This is a legal-board observation, independent of a noisy cp label. It
     # says the queen/rook is threatened, never that its capture is forced.
     if m["check"] and p["checkForkTargets"]:
-        victim = p["checkForkTargets"][0]["piece"]
-        return "check_fork", [f"Nguy hiểm, {side} vừa chiếu vua vừa đe dọa bắt {victim} {opponent}!",
-                              f"{side} chiếu tướng, đồng thời nhắm vào {victim} {opponent}!",
-                              f"Một đòn chiếu kèm đe dọa {victim} {opponent} của {side}!"]
+        return say("check_fork")
     if quality["mistake"] or quality["lostAdvantage"]:
-        return "intention", [f"Liệu {side} có ý đồ gì trong nước đi này?",
-                             f"Một lựa chọn đáng chú ý của {side}, liệu còn tính toán phía sau?",
-                             f"{side} đang hướng tới kế hoạch nào với nước vừa rồi?",
-                             f"Liệu {side} đang chuẩn bị một ý tưởng khác?"]
+        return say("intention")
     if quality["dangerous"]:
-        return "danger", [f"{side} đang tạo sức ép chiếu hết!",
-                          f"Rất nguy hiểm, {side} đang duy trì sức ép chiếu hết!"]
+        return say("danger")
     if m["check"]:
-        return "check", [f"{side} chiếu vua, {opponent} phải ứng phó!",
-                         f"Chiếu vua, {side} đang gây sức ép!",
-                         f"Vua {opponent} đang bị chiếu!"]
+        return say("check_again", "check_again", "check") if p["checkAgain"] else say("check")
     if m["promotion"]:
-        return "promotion", [f"{side} phong cấp thành {m['promotion']} tại {target}!",
-                             f"Tốt {side} đã hóa {m['promotion']} ở {target}!"]
+        extra = "queen_promotion" if m["promotion"] == "hậu" else "underpromotion"
+        return say("promotion", extra, "promotion")
     if m["castling"]:
-        return "castling", [f"{side} vừa nhập thành cánh {m['wing']}.",
-                            f"{side} đưa vua về cánh {m['wing']}.",
-                            f"Vua {side} đã nhập thành cánh {m['wing']}."]
+        return say("castling")
     if p["escapingCheck"]:
-        return "escape", [f"{side} đã hóa giải thế chiếu.", f"{side} vừa thoát chiếu!"]
-    if p["looseMovedPiece"] and piece in ("mã", "tượng", "xe", "hậu"):
-        return "contact", [f"{piece.capitalize()} {side} vừa đi đang bị tấn công.",
-                           f"{piece.capitalize()} {side} vừa tới vị trí bị tấn công.",
-                           f"{piece.capitalize()} {side} đang trong tầm bắt của đối phương."]
+        return "escape", fill(MOVE["escape_king" if m["piece"] == "vua" else "escape_block"], ctx)
     if p["advancedPawn"]:
-        return "passed_pawn", [f"Tốt thông {side} đã tiến rất sâu!",
-                               f"{side} vừa đẩy tốt thông lên cao!",
-                               f"Tốt thông {side} đang rất đáng chú ý!"]
+        return say("passed_pawn")
     if p["openFile"]:
-        return "open_file", [f"Xe {side} đã đứng trên cột mở.",
-                             f"{side} vừa đưa xe vào cột mở.",
-                             f"Xe {side} đang hoạt động trên cột mở."]
+        return say("open_file")
     if p["development"]:
-        return "development", [f"{side} phát triển {piece} lên {target}.",
-                               f"{side} đưa {piece} vào cuộc ở {target}.",
-                               f"Thêm một {piece} {side} được triển khai.",
-                               f"{piece.capitalize()} {side} đã nhập cuộc!"]
+        return say("development")
     if p["bothCentrePawns"] and facts.board.ply() <= 12:
-        return "centre_duel", ["Hai bên đang giằng co ở trung tâm.",
-                               f"{side} tiếp tục tranh chấp trung tâm.",
-                               "Tốt hai bên đang đối đầu ở trung tâm."]
-    if p["centreGain"]:
-        return "centre", [f"{side} tăng sức kiểm soát trung tâm.",
-                          f"{side} vừa tạo thêm ảnh hưởng ở trung tâm.",
-                          f"Sức ép của {side} lên trung tâm vừa tăng."]
+        return say("centre_duel")
+    if p["centreGain"] and facts.board.ply() <= 30:
+        return say("centre")
     if p["queenEarly"]:
-        return "early_queen", [f"{side} đưa hậu ra khá sớm.", f"Hậu {side} đã sớm nhập cuộc."]
+        return say("early_queen")
     if p["sparse"]:
-        return "endgame", [f"{side} điều {piece} sang {target} trong tàn cuộc.",
-                           f"{piece.capitalize()} {side} vừa chuyển sang {target}."]
+        extra = {"vua": "endgame_king", "tốt": "endgame_pawn"}.get(m["piece"])
+        return say("endgame", *((extra, "endgame") if extra else ()))
     if quality["sound"]:
-        return "quiet", [f"Một nước điều {piece} chắc tay của {side}.",
-                         f"{side} vừa có một nước đi vững vàng.",
-                         f"{side} giữ được chất lượng thế cờ."]
-    return "quiet", [event + "." for event in event_phrases(m, p)]
+        return say("steady")
+    return "quiet", event_phrases(m, p, ctx)
 
 
-def compose(facts, job):
+# Observations that do not name the move. Said twice in a row they sound like a
+# stuck record, so a recent repeat falls back to describing the move itself.
+GENERIC_MOTIFS = frozenset({"centre", "centre_duel", "early_queen", "open_file", "passed_pawn", "steady"})
+
+
+def compose(facts, job, recent_motifs=(), recent_insights=(), fast=False):
+    """The sentence about the move, and (in `facts.insight`) at most one reading of why it was played.
+
+    `fast`: the players are moving quickly, so only the striking readings are added."""
     if "finish" in facts.values or "intro" in facts.values or "move" not in facts.values:
         return
     quality = assessment(facts)
     facts.values["assessment"] = quality
     motif, candidates = theme_phrases(facts, quality)
+    if motif in GENERIC_MOTIFS and motif in list(recent_motifs)[-3:]:
+        motif = "event"
+        candidates = event_phrases(facts.values["move"], facts.values["position"], move_context(facts))
     # One short observation of the CURRENT position. Repeating the previous
     # move and appending generic praise delayed the voice and sounded rushed.
-    seed = int(hashlib.sha256((job.gameId + "|" + " ".join(job.sanHistory)).encode()).hexdigest()[:12], 16)
+    seed = seed_of(job.gameId, " ".join(job.sanHistory))
+    candidates = list(dict.fromkeys(candidates))
     facts.alternatives = candidates[seed % len(candidates):] + candidates[:seed % len(candidates)]
     ids = ["move", "position"]
     if motif == "exchange":
@@ -279,3 +267,115 @@ def compose(facts, job):
         ids.append("engine")
     facts.values["narration"] = {"source": "verified-composer:6-flow", "theme": motif, "factIds": ids}
     facts.priority = 90 if "check_fork" in motif else 80 if motif in ("danger", "intention", "capture_question") else facts.priority
+    if not motif.startswith("opening_"):
+        facts.insight = choose(analyse(facts, job.sanHistory), motif, recent_insights, fast)
+        if facts.insight:
+            facts.values["insight"] = {"source": "rules/board", "key": facts.insight.key}
+            ids.append("insight")
+            if facts.insight.priority >= 64:
+                facts.priority = max(facts.priority, 60)
+
+
+def clock_text(seconds):
+    minutes, rest = divmod(int(seconds), 60)
+    if minutes and rest:
+        return f"{minutes} phút {rest} giây"
+    return f"{minutes} phút" if minutes else f"{rest} giây"
+
+
+def castled(board):
+    """Colors that castled during the game, from the replayed history."""
+    probe, done = board.root(), set()
+    for move in board.move_stack:
+        if probe.is_castling(move):
+            done.add(probe.turn)
+        probe.push(move)
+    return done
+
+
+IDLE_ORDER = ("check", "position", "kings", "material", "recap", "phase", "clock", "thinking")
+
+
+def idle_facts(job, facts):
+    """What a commentator says while a player thinks: the clock, material, kings, the phase, the last move.
+
+    Board, history and clock only. No engine: nothing here may hint at what to play.
+    """
+    board, before = facts.board, facts.before
+    side, other = ("Trắng", "Đen") if board.turn else ("Đen", "Trắng")
+    ctx = {"side": side, "other": other}
+    thinking = job.thinkingMs // 1000
+    pieces = len(board.piece_map())
+    phase = ("opening" if board.ply() <= 16 and pieces >= 28
+             else "endgame" if pieces <= 14 or (not board.queens and pieces <= 20) else "middlegame")
+    material = sum(VALUE[p.piece_type] * (1 if p.color else -1) for p in board.piece_map().values())
+    done = castled(board)
+    topics = {}
+    if board.is_check():
+        topics["check"] = fill(IDLE["check"], ctx)
+    if not board.move_stack:
+        topics["thinking"] = list(IDLE["first"])
+    else:
+        topics["thinking"] = fill(IDLE["thinking"], ctx)
+        if thinking >= 40:
+            topics["thinking"] = fill(IDLE["thinking_long"], ctx | {"seconds": thinking // 10 * 10}) + topics["thinking"]
+    low = False
+    if job.clock:
+        mine, theirs = (job.clock.white, job.clock.black) if board.turn else (job.clock.black, job.clock.white)
+        times = ctx | {"time": clock_text(mine), "other_time": clock_text(theirs)}
+        low = mine <= 20
+        if low:
+            topics["clock"] = fill(IDLE["clock_low"], times)
+        else:
+            topics["clock"] = fill(IDLE["clock"], times)
+            if mine * 2 <= theirs and mine < 120:
+                topics["clock"] += fill(IDLE["clock_behind"], times)
+            elif theirs * 2 <= mine and theirs < 120:
+                topics["clock"] += fill(IDLE["clock_ahead"], times)
+    if board.move_stack:
+        leader, trailer = ("Trắng", "Đen") if material > 0 else ("Đen", "Trắng")
+        size = abs(material)
+        key = ("material_equal" if size == 0 else "material_one" if size == 1
+               else "material_two" if size == 2 else "material_big")
+        topics["material"] = fill(IDLE[key], {"leader": leader, "trailer": trailer})
+    if board.ply() >= 8:
+        if len(done) == 2:
+            # Old news by the middlegame: worth saying only shortly after the second castling.
+            if board.ply() <= 20:
+                topics["kings"] = list(IDLE["kings_both"])
+        elif done:
+            yes, no = ("Trắng", "Đen") if chess.WHITE in done else ("Đen", "Trắng")
+            topics["kings"] = fill(IDLE["kings_one"], {"yes": yes, "no": no})
+        else:
+            topics["kings"] = list(IDLE["kings_none"])
+    if board.ply() >= 4:
+        topics["phase"] = fill(IDLE[f"phase_{phase}"], {"move": board.fullmove_number, "pieces": pieces})
+        if not board.queens:
+            topics["phase"] += IDLE["queens_off"]
+    if board.move_stack:
+        last = describe(before, board.peek())
+        recap = {"mover": last["mover"], "victim": side, "piece": last["piece"], "captured": last["capture"] or "",
+                 "target": last["to"], "wing": last["wing"], "castle": "ngắn" if last["wing"] == "vua" else "dài",
+                 "promo": last["promotion"] or ""}
+        key = ("recap_castling" if last["castling"] else "recap_promotion" if last["promotion"]
+               else "recap_en_passant" if last["enPassant"] else "recap_capture" if last["capture"]
+               else "recap_move")
+        topics["recap"] = fill(IDLE[key], recap)
+    if board.move_stack and (summary := position_summary(board)):
+        topics["position"] = summary
+    # The first remark in a think reads the board; the second looks at the clock or the thinking;
+    # later ones take the remaining topics in turn. A check or a nearly empty clock always comes first.
+    present = [name for name in IDLE_ORDER if name in topics]
+    second = next((name for name in ("clock", "thinking") if name in topics and name != present[0]), None)
+    sequence = present[:1] + ([second] if second else []) + [name for name in present[1:] if name != second]
+    primary = ("check" if "check" in topics else "clock" if low
+               else sequence[(max(job.idleCount, 1) - 1) % len(sequence)])
+    start = sequence.index(primary)
+    others = [topics[name][0] for name in sequence[start + 1:] + sequence[:start]][:2]
+    facts.alternatives = list(dict.fromkeys(topics[primary] + others))
+    facts.values["idle"] = {"source": "rules/lila-clock", "side": side, "count": job.idleCount,
+                            "thinkingS": thinking, "phase": phase, "materialBalance": material,
+                            "castled": sorted("white" if c else "black" for c in done),
+                            "clock": job.clock.model_dump() if job.clock else None}
+    facts.values["narration"] = {"source": "idle-composer", "theme": f"idle_{primary}", "factIds": ["idle"]}
+    return facts

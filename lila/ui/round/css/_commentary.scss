@@ -5,4 +5,95 @@
   &__toggle {
     width: 100%;
   }
+
+  &__voice {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.3em 0.6em 0;
+    font-size: 0.85em;
+    color: $c-font-dim;
+
+    select {
+      flex: 1 1 auto;
+      min-width: 0;
+    }
+  }
+
+  &__status {
+    display: flex;
+    align-items: center;
+    gap: 0.5em;
+    padding: 0.3em 0.6em 0;
+    font-size: 0.85em;
+    color: $c-font-dim;
+
+    &::before {
+      content: '';
+      flex: 0 0 auto;
+      width: 0.6em;
+      height: 0.6em;
+      border-radius: 50%;
+      background: $c-font-dimmer;
+    }
+  }
+
+  &[data-state='working'] &__status::before {
+    background: $c-secondary;
+    animation: commentary-pulse 1s ease-in-out infinite alternate;
+  }
+
+  &[data-state='speaking'] &__status::before {
+    background: $c-good;
+  }
+
+  &[data-state='error'] &__status {
+    color: $c-bad;
+
+    &::before {
+      background: $c-bad;
+    }
+  }
+
+  &__subtitle {
+    margin: 0.3em 0 0;
+    padding: 0.4em 0.6em;
+    min-height: 2.9em;
+    line-height: 1.25;
+    border-inline-start: 3px solid $c-primary;
+    background: $c-bg-zebra;
+
+    // Five lines at most: the sentence about the move and the commentator's reading of it.
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 5;
+    line-clamp: 5;
+    overflow: hidden;
+    transition: opacity 0.3s;
+
+    &[data-old='true'] {
+      opacity: 0.6;
+      border-inline-start-color: $c-border;
+    }
+  }
+
+  &__ply {
+    margin-inline-end: 0.5em;
+    font-size: 0.8em;
+    font-weight: bold;
+    color: $c-font-dim;
+    white-space: nowrap;
+  }
+}
+
+@keyframes commentary-pulse {
+  to {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commentary[data-state='working'] .commentary__status::before {
+    animation: none;
+  }
 }

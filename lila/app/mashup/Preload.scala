@@ -36,7 +36,8 @@ final class Preload(
     unreadCount: lila.msg.MsgUnreadCount,
     relayHome: lila.relay.RelayHomeApi,
     notifyApi: lila.notify.NotifyApi,
-    clasApi: lila.clas.ClasApi
+    clasApi: lila.clas.ClasApi,
+    dailyGoalApi: lila.dailyGoal.DailyGoalApi
 )(using Executor):
 
   import Preload.*
@@ -94,7 +95,9 @@ final class Preload(
         lightUserApi
           .preloadMany(entries.flatMap(_.userIds).toList)
           .mon(lila.mon.lobby.segment("lightUsers"))
-    classes <- ctx.myId.so(me => clasApi.isStudent(me).so(clasApi.clas.ofStudent(me, 4)))
+    (classes, dailyGoal) <- ctx.myId
+      .so(me => clasApi.isStudent(me).so(clasApi.clas.ofStudent(me, 4)))
+      .zip(ctx.myId.ifTrue(ctx.noBot).so(me => dailyGoalApi.get(me.userId)))
     relaySpotlights = relayHome.spotlight.getForContinent(HTTPRequest.continent(ctx.req))
   yield Homepage(
     data,
@@ -114,6 +117,7 @@ final class Preload(
     getLastUpdates(),
     ublogPosts,
     classes,
+    dailyGoal,
     withPerfs,
     hasUnreadLichessMessage = lichessMsg
   )
@@ -153,6 +157,7 @@ object Preload:
       lastUpdates: List[lila.feed.Feed.Update],
       ublogPosts: List[UblogPost.PreviewPost],
       classes: List[lila.clas.Clas],
+      dailyGoal: Option[lila.dailyGoal.DailyGoal],
       me: Option[UserWithPerfs],
       hasUnreadLichessMessage: Boolean
   )

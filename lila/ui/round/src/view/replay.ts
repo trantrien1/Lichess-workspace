@@ -20,6 +20,7 @@ import type RoundController from '../ctrl';
 import type { Step } from '../interfaces';
 import * as util from '../util';
 import boardMenu from './boardMenu';
+import winProbability from './winProbability';
 
 const scrollMax = 99999;
 const moveTag = 'Z7yx';
@@ -246,6 +247,7 @@ export function render(ctrl: RoundController): LooseVNode {
   return (
     !ctrl.nvui &&
     hl(rmovesTag, [
+      winProbability(ctrl),
       renderButtons(ctrl),
       boardMenu(ctrl),
       initMessage(ctrl) ||

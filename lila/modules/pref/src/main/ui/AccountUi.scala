@@ -90,6 +90,7 @@ final class AccountUi(helpers: Helpers):
           a(activeCls("kid"), href := routes.Account.kid)(
             trans.site.kidMode()
           ),
+          a(activeCls("daily-goal"), href := routes.DailyGoal.index)("Daily goal"),
           div(cls := "sep"),
           a(activeCls("username"), href := routes.Account.username)(
             trans.site.changeUsername()

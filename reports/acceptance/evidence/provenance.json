@@ -1,0 +1,19 @@
+{
+  "verified_at_utc": "2026-11-05T09:43:49.655749+00:00",
+  "datasets": {
+    "data/human/2026-08-balanced.jsonl": "d15595804dba27a2058b7581b75832b19ae05141709928beb3f2e0662b3db069",
+    "data/human/2026-09-balanced.jsonl": "02d9408ef55a8a02fc770afef627621c10c96d692fc8923da2ec418d3995cd4f",
+    "data/human/2026-10-balanced.jsonl": "927308f880c3aa07dc16a08339a3e1509027c574743ea87befd3a8fa469d2ff4"
+  },
+  "files": {
+    "services/prediction/app/engine.py": "477d8b84462e6ef47833b757837e0a90d2bae492be66797f52e6f595b74e882a",
+    "services/prediction/app/scheduler.py": "03915d08193ef2545adbaed0a2276152141b206f30533b5d2b1fe3a7b0b46025",
+    "services/prediction/models/human-v1.json": "0822611ce98edcc7c3721483c430bce78c0df94c0ea5dc641e3fe09a69455fd0",
+    "patches/lila-win-probability.patch": "c591f08ba28facf2601488e88a046b45bca927808b373f2c21f7f312677f849b",
+    "infra/compose.yml": "8ebdee2b6845d43d6721345f63ed97b4716c85fac531b98f71364d4ae6afd8bd",
+    "scripts/browser-smoke.mjs": "a9839f068535741686affe18e1245452dc408105e8f9339194538b727f89cc12",
+    "scripts/probe_worker_load.py": "44abc36fc9151e99edea96a2e97c8b760a1cf833060e06305e0bdd2b457e9017"
+  },
+  "model_id": "human-logit-v1-54213e4fef50",
+  "round_bundle": "round.X2T6IZS5.js"
+}

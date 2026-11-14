@@ -1,0 +1,31 @@
+{
+  "purpose": "Diagnostic only; 100-game inference probe does not establish deployment calibration",
+  "model_id": "human-logit-v1-54213e4fef50",
+  "dataset_sha256": "927308f880c3aa07dc16a08339a3e1509027c574743ea87befd3a8fa469d2ff4",
+  "sampling": "SHA256-ordered games; one hash-selected position per game; no outcome selection",
+  "engine": "Stockfish 15.1",
+  "search_ms": 250,
+  "games": 100,
+  "labels_white_draw_black": [
+    46,
+    6,
+    48
+  ],
+  "elapsed_seconds": 25.35,
+  "metrics": {
+    "human_archived_score": {
+      "log_loss": 0.7804791892835051,
+      "brier": 0.475628929103629
+    },
+    "human_fresh_score": {
+      "log_loss": 0.782699749304075,
+      "brier": 0.47633632848435636
+    },
+    "fresh_engine_wdl": {
+      "log_loss": 9.905499668119894,
+      "brier": 1.09264354
+    }
+  },
+  "mean_largest_class_probability_shift": 0.021191875721382467,
+  "max_class_probability_shift": 0.32186390450253133
+}

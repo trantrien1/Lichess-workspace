@@ -1,0 +1,28 @@
+{
+  "checked_at_utc": "2026-11-05T09:54:00.4483253Z",
+  "local_url": "http://localhost:8080/",
+  "http_status": 200,
+  "worker": {
+    "status": "ok",
+    "pending": 0,
+    "active": 0,
+    "cached": 25,
+    "completed": 25,
+    "cache_hits": 125,
+    "superseded": 5,
+    "errors": 0,
+    "human_model": {
+      "loaded": true,
+      "model_id": "human-logit-v1-54213e4fef50",
+      "errors": 0
+    }
+  },
+  "runtime": {
+    "status": "running",
+    "health": "healthy",
+    "engine_workers": "ENGINE_WORKERS=2",
+    "nano_cpus": 2000000000,
+    "memory_bytes": 536870912,
+    "image_id": "sha256:8af31afb3c516822f6cec7c9e5e55fb19a03f81e1bd0a680a33e023a22725437"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "repositories": {
+    "lila-docker": {
+      "url": "https://github.com/lichess-org/lila-docker.git",
+      "commit": "18586dc7e0ae261a7384394d90ff02af7cdce979",
+      "path": "infra/lila-docker"
+    },
+    "lila": {
+      "url": "https://github.com/lichess-org/lila.git",
+      "commit": "4eea97abce686a1cc6b07abe54cce9e10c223227",
+      "path": "infra/lila-docker/repos/lila"
+    }
+  },
+  "runtime": {
+    "java": "25.0.3",
+    "sbt": "2.0.12",
+    "scala": "3.10.0",
+    "node": "24.20.0",
+    "pnpm": "12.9.0",
+    "stockfish": "15.1-4 (Debian bookworm)",
+    "python_dependencies": "services/prediction/uv.lock"
+  }
+}

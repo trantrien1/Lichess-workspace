@@ -16,3 +16,17 @@ lila-search/.bsp/
 lila-search/.idea/
 lila-search/.metals/
 lila-search/.vscode/
+
+# Prediction/commentary services + local infra
+infra/lila-docker/
+.venv/
+**/__pycache__/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+.cache/
+artifacts/
+data/
+.env
+*.log
+services/prediction/.venv/

@@ -110,6 +110,17 @@ final class Round(
           watch(if getUserStr("pov").map(_.id).exists(pov.opponent.userId.has) then !pov else pov)
         case None => challengeC.showId(gameId.into(lila.challenge.ChallengeId))
 
+  def winProbability(gameId: GameId) = Open:
+    if !env.winProbability.enabled then notFound
+    else
+      Found(env.round.proxyRepo.game(gameId)): game =>
+        if !game.variant.standard then notFound
+        else if playablePovForReq(game).isDefined then fuccess(Forbidden)
+        else
+          isBlockedByPlayer(game).flatMap:
+            if _ then notFound
+            else env.winProbability(game).map(data => Ok(data).noCache)
+
   def watcherRedirect(gameId: GameId, color: Color) = Anon:
     MovedPermanently(routes.Round.watcher(gameId, color))
 
@@ -148,7 +159,9 @@ final class Round(
                       page <- renderPage:
                         views.round.watcher(
                           pov,
-                          data,
+                          data.add(
+                            "winProbability" -> (env.winProbability.enabled && pov.game.variant.standard)
+                          ),
                           tour.map(_.tourAndTeamVs),
                           simul,
                           crosstable,

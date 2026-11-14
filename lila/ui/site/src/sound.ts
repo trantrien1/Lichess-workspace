@@ -21,6 +21,20 @@ export default new (class implements SoundI {
   primerEvents = ['touchend', 'pointerup', 'pointerdown', 'mousedown', 'keydown'];
   voiceRateRange = { min: 0.3, max: 1.7 };
   nvuiReady = memoize(() => site.asset.loadI18n('nvui'));
+  speechSuspensions = 0;
+  speechGeneration = 0;
+
+  suspendSpeech = (): (() => void) => {
+    this.speechSuspensions++;
+    this.speechGeneration++;
+    window.speechSynthesis?.cancel();
+    let released = false;
+    return () => {
+      if (released) return;
+      released = true;
+      this.speechSuspensions--;
+    };
+  };
 
   constructor() {
     this.primerEvents.forEach(e => window.addEventListener(e, this.primer, { capture: true }));
@@ -180,10 +194,13 @@ export default new (class implements SoundI {
     this.sayLazy(() => text, cut, force, translated);
 
   sayLazy = (text: () => string, cut = false, force = false, translated = false): boolean => {
+    if (this.speechSuspensions) return false;
     if (typeof window.speechSynthesis === 'undefined') return false;
     if (!this.isSpeech() && !force) return false;
+    const generation = this.speechGeneration;
     this.nvuiReady()
       .then(() => {
+        if (this.speechSuspensions || generation !== this.speechGeneration) return;
         if (cut) speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(text());
         const selectedVoice = this.getVoice();

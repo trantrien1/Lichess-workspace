@@ -1,6 +1,8 @@
 # Run `./lila.sh playRoutes` after modifying this file
 
 # Lobby
+GET   /commentary/$gameId<\w{8}>       controllers.Commentary.stream(gameId: GameId, voice: String ?= "piper-vais1000")
+GET   /commentary/voice/$voice<[a-z0-9-]{1,40}> controllers.Commentary.sample(voice: String)
 GET   /                                controllers.Lobby.home
 GET   /lobby/seeks                     controllers.Lobby.seeks
 
@@ -394,6 +396,7 @@ POST  /bots/dev/asset/$tpe<sound|image|book>/$key<\w{12}(\.\w{2,4})?> controller
 POST  /bots/dev/asset/mv/$key<\w{12}(\.\w{2,4})?>/:name  controllers.JsBot.devNameAsset(key: String, name: String)
 
 # Round
+GET   /game/$gameId<\w{8}>/win-probability          controllers.Round.winProbability(gameId: GameId)
 GET   /game/$gameId<\w{8}>                          controllers.Round.watcher(gameId: GameId, color: Color = Color.white)
 GET   /game/$gameId<\w{8}>/$color<white|black>      controllers.Round.watcher(gameId: GameId, color: Color)
 GET   /game/$fullId<\w{12}>                         controllers.Round.player(fullId: GameFullId)
@@ -854,6 +857,9 @@ GET   /account/username                controllers.Account.username
 POST  /account/username                controllers.Account.usernameApply
 GET   /account/kid                     controllers.Account.kid
 POST  /account/kid                     controllers.Account.kidPost
+GET   /account/daily-goal              controllers.DailyGoal.index
+POST  /account/daily-goal              controllers.DailyGoal.save
+POST  /account/daily-goal/off          controllers.DailyGoal.disable
 GET   /account/twofactor               controllers.Account.twoFactor
 POST  /account/twofactor/setup         controllers.Account.setupTwoFactor
 POST  /account/twofactor/disable       controllers.Account.disableTwoFactor

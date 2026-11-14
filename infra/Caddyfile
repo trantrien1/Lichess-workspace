@@ -1,0 +1,13 @@
+:80 {
+  @websockets {
+    header Connection *Upgrade*
+    header Upgrade websocket
+  }
+  reverse_proxy @websockets lila_ws:9664 {
+    header_up Origin http://localhost:8080
+  }
+  reverse_proxy lila:9663 {
+    header_up Host localhost:8080
+    header_up Origin http://localhost:8080
+  }
+}

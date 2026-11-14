@@ -97,6 +97,7 @@ type SoundMove = (opts?: SoundMoveOpts) => void;
 type SoundListener = (event: 'start' | 'stop', text?: string) => void;
 
 interface SoundI {
+  suspendSpeech(): () => void;
   // file://./../../site/src/sound.ts
   listeners: Set<SoundListener>;
   theme: string;

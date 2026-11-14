@@ -1,0 +1,178 @@
+// daily goal and streak: the homepage card and the account page
+.daily-goal-tasks {
+  display: flex;
+  flex-flow: column;
+  gap: 0.6em;
+
+  &__task {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.25em 1em;
+  }
+
+  &__count {
+    color: $c-font-dim;
+  }
+
+  &__bar {
+    grid-column: 1 / -1;
+    height: 0.5em;
+    border-radius: 0.25em;
+    background: $c-bg-zebra2;
+    overflow: hidden;
+
+    span {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: $c-accent;
+    }
+  }
+
+  &__task.done &__bar span {
+    background: $c-good;
+  }
+}
+
+.daily-goal-home {
+  @extend %box-neat;
+
+  display: flex;
+  flex-flow: column;
+  gap: 0.8em;
+  padding: 1em 1.2em;
+  background: $c-bg-box;
+  color: $c-font;
+
+  &:hover {
+    color: $c-font;
+    background: $c-bg-zebra;
+  }
+
+  &__streak {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+
+    &::before {
+      font-size: 2em;
+      color: $c-accent;
+    }
+
+    strong {
+      font-size: 1.8em;
+      line-height: 1;
+    }
+
+    span {
+      color: $c-font-dim;
+    }
+  }
+
+  &__status {
+    font-size: 0.9em;
+    color: $c-font-dim;
+  }
+
+  &--done &__status {
+    color: $c-good;
+  }
+
+  &--off {
+    flex-flow: row;
+    align-items: center;
+    gap: 1em;
+
+    &::before {
+      font-size: 2em;
+      color: $c-accent;
+    }
+
+    > span {
+      display: flex;
+      flex-flow: column;
+    }
+
+    span span {
+      font-size: 0.9em;
+      color: $c-font-dim;
+    }
+  }
+}
+
+.daily-goal {
+  &__summary {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2em 3em;
+    margin-bottom: 2em;
+  }
+
+  &__streak {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+
+    &::before {
+      font-size: 3.5em;
+      color: $c-accent;
+    }
+
+    strong {
+      font-size: 2.5em;
+      line-height: 1;
+    }
+
+    span {
+      color: $c-font-dim;
+    }
+  }
+
+  &__best {
+    margin-top: 0.4em;
+    font-size: 0.9em;
+  }
+
+  &__week {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    max-width: 30em;
+  }
+
+  &__day {
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    gap: 0.3em;
+
+    &__mark {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2em;
+      height: 2em;
+      border: 2px solid $c-border;
+      border-radius: 50%;
+    }
+
+    &.done &__mark {
+      border-color: $c-good;
+      background: $c-good;
+      color: #fff;
+    }
+
+    &.today &__name {
+      font-weight: bold;
+    }
+  }
+
+  &__intro {
+    margin-bottom: 1.5em;
+  }
+
+  &__off {
+    margin-top: 2em;
+  }
+}

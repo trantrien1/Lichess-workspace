@@ -7,6 +7,7 @@ import { type LooseVNodes, hl, bind, toggleButton as boardMenuToggleButton, data
 import type RoundController from '../ctrl';
 import * as button from './button';
 import { anyClockView } from './clock';
+import { commentaryView } from './commentary';
 import renderExpiration from './expiration';
 import { render as renderReplay, analysisButton } from './replay';
 import { userHtml } from './user';
@@ -146,4 +147,5 @@ export const renderTable = (ctrl: RoundController): LooseVNodes => [
    * to overflow: it couldn't be contained in the parent anymore */
   anyClockView(ctrl, 'top'),
   anyClockView(ctrl, 'bottom'),
+  commentaryView(ctrl.commentary),
 ];

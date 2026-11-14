@@ -58,6 +58,7 @@ final class Env(
   val history: lila.history.Env = wire[lila.history.Env]
   val bookmark: lila.bookmark.Env = wire[lila.bookmark.Env]
   val round: lila.round.Env = wire[lila.round.Env]
+  val winProbability = new http.WinProbability(config, summon[StandaloneWSClient], memo.cacheApi)
   val search: lila.search.Env = wire[lila.search.Env]
   val gameSearch: lila.gameSearch.Env = wire[lila.gameSearch.Env]
   val perfStat: lila.perfStat.Env = wire[lila.perfStat.Env]

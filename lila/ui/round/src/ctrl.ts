@@ -59,6 +59,7 @@ import TransientMove from './transientMove';
 import * as util from './util';
 import { endGameView } from './view/main';
 import { userTxt } from './view/user';
+import WinProbability from './winProbability';
 import * as xhr from './xhr';
 
 type GoneBerserk = Partial<ByColor<boolean>>;
@@ -66,6 +67,7 @@ type GoneBerserk = Partial<ByColor<boolean>>;
 export default class RoundController implements MoveRootCtrl {
   data: RoundData;
   socket: RoundSocket;
+  winProbability?: WinProbability;
   chessground: CgApi;
   clock?: ClockCtrl;
   corresClock?: CorresClockController;
@@ -170,6 +172,14 @@ export default class RoundController implements MoveRootCtrl {
     pubsub.on('zen', toggleZenMode);
 
     if (!this.opts.noab && this.isPlaying()) ab.init(this);
+    if (d.winProbability && d.player.spectator && d.game.variant.key === 'standard') {
+      this.winProbability = new WinProbability(() => this.data, redraw);
+      pubsub.on('socket.close', this.winProbability.disconnected);
+      pubsub.on('socket.open', () => {
+        // Initial page data is already authoritative. Only resync after a disconnect.
+        if (this.winProbability?.data?.status === 'stale') this.socket.reload();
+      });
+    }
   }
 
   private readonly showExpiration = () => {
@@ -513,6 +523,7 @@ export default class RoundController implements MoveRootCtrl {
       if (this.data.steps.length > 2) this.data.expiration = undefined;
       else this.data.expiration.movedAt = Date.now();
     }
+    this.winProbability?.sync();
     this.redraw();
     if (playing && playedColor === d.player.color) {
       this.transientMove?.clear();
@@ -568,6 +579,7 @@ export default class RoundController implements MoveRootCtrl {
     if (posChanged) this.ply = util.lastPly(d);
     util.upgradeServerData(d);
     this.data = d;
+    this.winProbability?.sync();
     this.clearJust();
     this.shouldSendMoveTime = false;
     this.updateClockCtrl();
@@ -599,6 +611,7 @@ export default class RoundController implements MoveRootCtrl {
     d.game.status = o.status;
     d.game.abortedBy = o.abortedBy;
     d.game.boosted = o.boosted;
+    this.winProbability?.sync();
     d.player.blindfold = false;
     this.userJump(ply);
     d.game.fen = util.lastStep(this.data).fen;

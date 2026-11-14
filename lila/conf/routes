@@ -395,6 +395,7 @@ POST  /bots/dev/asset/$tpe<sound|image|book>/$key<\w{12}(\.\w{2,4})?> controller
 POST  /bots/dev/asset/mv/$key<\w{12}(\.\w{2,4})?>/:name  controllers.JsBot.devNameAsset(key: String, name: String)
 
 # Round
+GET   /game/$gameId<\w{8}>/win-probability          controllers.Round.winProbability(gameId: GameId)
 GET   /game/$gameId<\w{8}>                          controllers.Round.watcher(gameId: GameId, color: Color = Color.white)
 GET   /game/$gameId<\w{8}>/$color<white|black>      controllers.Round.watcher(gameId: GameId, color: Color)
 GET   /game/$fullId<\w{12}>                         controllers.Round.player(fullId: GameFullId)

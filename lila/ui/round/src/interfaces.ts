@@ -110,6 +110,7 @@ export type EncodedDests = string | Record<string, string>;
 
 export interface RoundData extends GameData {
   commentary?: boolean;
+  winProbability?: boolean;
   clock?: ClockData;
   pref: Pref;
   steps: RoundStep[];

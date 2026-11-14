@@ -1,0 +1,44 @@
+.win-probability {
+  order: -1;
+  padding: 0.65rem 0.8rem;
+  background: $c-bg-zebra;
+  border-bottom: 1px solid $c-border;
+  font-size: 0.85rem;
+
+  &__values {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.4rem;
+  }
+
+  &__source {
+    color: $c-font-dim;
+    font-size: 0.75rem;
+    margin-top: 0.3rem;
+  }
+
+  &__bar {
+    display: flex;
+    height: 0.65rem;
+    margin: 0.1rem 0 0.35rem;
+    overflow: hidden;
+    border: 1px solid $c-font-dim;
+    border-radius: 3px;
+  }
+
+  &__white {
+    background: #f2f2f2;
+  }
+
+  &__draw {
+    background: #929292;
+  }
+
+  &__black {
+    background: #252525;
+  }
+
+  &__status {
+    color: $c-font-dim;
+  }
+}
